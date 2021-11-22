@@ -46,7 +46,7 @@ void SYS_Init(void)
 
     MOTOR_Init();
     REMOTE_Init();
-    Sensor_Init();
+    SENSOR_Init();
 
     // Todo 开串口 ano_Init?
     __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);

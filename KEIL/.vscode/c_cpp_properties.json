@@ -3,17 +3,17 @@
         {
             "name": "Target 1",
             "includePath": [
-                "d:\\workspace\\WHZ_FLIGHT_V4\\uCOS",
-                "d:\\workspace\\WHZ_FLIGHT_V4\\LIB\\Inc",
-                "d:\\workspace\\WHZ_FLIGHT_V4\\HAL",
-                "d:\\workspace\\WHZ_FLIGHT_V4\\APP",
-                "d:\\workspace\\WHZ_FLIGHT_V4\\DRIVER",
-                "d:\\workspace\\WHZ_FLIGHT_V4\\FLIGHT",
+                "d:\\workspace\\WHZ_FLIGHT\\uCOS",
+                "d:\\workspace\\WHZ_FLIGHT\\LIB\\Inc",
+                "d:\\workspace\\WHZ_FLIGHT\\HAL",
+                "d:\\workspace\\WHZ_FLIGHT\\APP",
+                "d:\\workspace\\WHZ_FLIGHT\\DRIVER",
+                "d:\\workspace\\WHZ_FLIGHT\\FLIGHT",
                 "C:\\Keil_v5\\ARM\\ARMCC\\include",
                 "C:\\Keil_v5\\ARM\\ARMCC\\include\\rw",
-                "d:\\workspace\\WHZ_FLIGHT_V4\\LIB",
-                "d:\\workspace\\WHZ_FLIGHT_V4\\LIB\\Src",
-                "d:\\workspace\\WHZ_FLIGHT_V4\\UCOS"
+                "d:\\workspace\\WHZ_FLIGHT\\LIB",
+                "d:\\workspace\\WHZ_FLIGHT\\LIB\\Src",
+                "d:\\workspace\\WHZ_FLIGHT\\UCOS"
             ],
             "defines": [
                 "USE_HAL_DRIVER",

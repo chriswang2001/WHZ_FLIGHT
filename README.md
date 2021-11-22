@@ -72,8 +72,6 @@ the core、ports and config of the embedded operating system ucos_ii
 
 ## Task
 
-遥控器任务
-
-传感器任务 姿态解算 pid
+传感器任务 姿态解算 pid 
 
 数据发送任务

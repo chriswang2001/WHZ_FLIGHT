@@ -32,6 +32,67 @@ enum
     MODE,
 };
 
+/**
+ * @brief Three-dimensional spacial vector in form of int16_t
+ */
+typedef union
+{
+    int16_t array[3];
+
+    struct
+    {
+        int16_t x;
+        int16_t y;
+        int16_t z;
+    } axis;
+} Int16Vector3;
+
+/**
+ * @brief Three-dimensional spacial vector in form of float
+ */
+typedef union
+{
+    float array[3];
+
+    struct
+    {
+        float x;
+        float y;
+        float z;
+    } axis;
+} FloatVector3;
+
+/**
+ * @brief Quaternion, the 'w' element is the first element.
+ */
+typedef union
+{
+    float array[4];
+
+    struct
+    {
+        float w;
+        float x;
+        float y;
+        float z;
+    } element;
+} Quaternion;
+
+/**
+ * @brief Euler angles union in the Aerospace sequence, also known as the ZYX sequence.
+ */
+typedef union
+{
+    float array[3];
+
+    struct
+    {
+        float roll;
+        float pitch;
+        float yaw;
+    } angle;
+} EulerAngles;
+
 #ifdef __cplusplus
 }
 #endif

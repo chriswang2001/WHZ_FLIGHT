@@ -24,7 +24,7 @@ int main(void)
 
     while (1)
     {
-        Sensor_Task();
+        SENSOR_Task();
         HAL_Delay(20);
     }
 }
