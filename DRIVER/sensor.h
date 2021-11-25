@@ -27,9 +27,10 @@ void MPU_Init(void);
 bool MPU_Connect(void);
 void HMC_Init(void);
 bool HMC_Connect(void);
-void ReadAccelRaw(int16_t *dest);
-void ReadGyroRaw(int16_t *dest);
-void ReadMagRaw(int16_t *dest);
+void MS_Init(void);
+void MPU_ReadAccelRaw(int16_t *dest);
+void MPU_ReadGyroRaw(int16_t *dest);
+void HMC_ReadMagRaw(int16_t *dest);
 /* Exported Variables --------------------------------------------------------*/
 
 /* Defines -------------------------------------------------------------------*/
@@ -202,7 +203,7 @@ enum Mscale
 #define MS5611_CMD_RESET 0x1E
 #define MS5611_CMD_CONV_D1 0x40
 #define MS5611_CMD_CONV_D2 0x50
-#define MS5611_CMD_READ_PROM 0xA2
+#define MS5611_CMD_READ_PROM 0xA0
 
 #ifdef __cplusplus
 }

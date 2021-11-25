@@ -9,6 +9,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "sensor.h"
+#include "arm_math.h"
 #include "i2c.h"
 #include <math.h>
 #include <stdio.h>
@@ -20,56 +21,49 @@ uint8_t Ascale = AFS_8G;
 uint8_t Mscale = MFS_130Ga;
 
 // scale resolutions per LSB for the sensors
-float aRes[4] = {16384.f, 8192.f, 4096.f, 2048.f};
-float gRes[4] = {131.0f, 62.5f, 32.8f, 16.4f};
-float mRes[8] = {1.37f, 1.09f, 0.82f, 0.66f, 0.44f, 0.39f, 0.33f, 0.23f};
+float aRes[4] = {2.f / 32768.f, 4.f / 32768.f, 8.f / 32768.f, 16.f / 32768.f};
+float gRes[4] = {250.f / 32768.f, 500.f / 32768.f, 1000.f / 32768.f, 2000.f / 32768.f};
+float mRes[8] = {1.f / 1.37f, 1.f / 1.09f, 1.f / 0.82f, 1.f / 0.66f, 1.f / 0.44f, 1.f / 0.39f, 1.f / 0.33f, 1.f / 0.23f};
 
-FloatVector3 accel, gyro, mag;             // Stores the real sensor value
-FloatVector3 accelBias, gyroBias, magBias; // Bias corrections for sensor
+FloatVector3 accel, gyro, mag;                                                    // Stores the real sensor value in g's, degrees per second, milliGauss
+FloatVector3 accelBias, gyroBias, magBias, magScale = {.array = {1.f, 1.f, 1.f}}; // Offser and scale calibration for sensor in g's, degrees per second, milliGauss
 
 void SENSOR_Task(void)
 {
     Int16Vector3 accelCount, gyroCount, magCount; // Stores the 16-bit signed accelerometer, gyro, magnetometer sensor output
 
-    ReadAccelRaw(accelCount.array); // Read the x/y/z adc values
-
-    // Now we'll calculate the accleration value into actual g's
+    MPU_ReadAccelRaw(accelCount.array); // Read the x/y/z adc values
     for (int i = 0; i < 3; i++)
     {
-        accel.array[i] = (float)accelCount.array[i] / aRes[Ascale] - accelBias.array[i];
+        accel.array[i] = accelCount.array[i] * aRes[Ascale] - accelBias.array[i]; // Calculate the accleration value into actual g's
     }
 
-    ReadGyroRaw(gyroCount.array); // Read the x/y/z adc values
-
-    // Calculate the gyro value into actual degrees per second
+    MPU_ReadGyroRaw(gyroCount.array); // Read the x/y/z adc values
     for (int i = 0; i < 3; i++)
     {
-        gyro.array[i] = (float)gyroCount.array[i] / gRes[Gscale] - gyroBias.array[i];
+        gyro.array[i] = gyroCount.array[i] * gRes[Gscale] - gyroBias.array[i]; // Calculate the gyro value into actual degrees per second
     }
 
-    ReadMagRaw(magCount.array); // Read the x/y/z adc values
-
-    // Calculate the magnetometer values in milliGauss
+    HMC_ReadMagRaw(magCount.array); // Read the x/y/z adc values
     for (int i = 0; i < 3; i++)
     {
-        mag.array[i] = (float)magCount.array[i] / mRes[Mscale] - magBias.array[i];
+        mag.array[i] = magCount.array[i] * mRes[Mscale] * magScale.array[i] - magBias.array[i]; // Calculate the magnetometer values in milliGauss
     }
-
-    // So far, magnetometer bias is calculated and subtracted here manually, should construct an algorithm to do it automatically
-    // like the gyro and accelerometer biases
-    // magbias[0] = +56.;  // User environmental x-axis correction in milliGauss
-    // magbias[1] = -118.; // User environmental y-axis correction in milliGauss
-    // magbias[2] = +35.;  // User environmental z-axis correction in milliGauss
-    // Include factory calibration per data sheet and user environmental corrections
 }
 
+/**
+ * @brief sensor initialize including mpu hmc and ms
+ */
 void SENSOR_Init(void)
 {
-    if (MPU_Connect())
-        MPU_Init();
+    while (!MPU_Connect())
+        HAL_Delay(100);
+    MPU_Init();
 
     if (HMC_Connect())
         HMC_Init();
+
+    MS_Init();
 }
 
 /**
@@ -141,7 +135,7 @@ static bool SENSOR_RegReadBytes(uint8_t addr, uint8_t reg, uint8_t length, uint8
  * @brief read raw accelerometer data
  * @param dest destination array to store data
  */
-void ReadAccelRaw(int16_t *dest)
+void MPU_ReadAccelRaw(int16_t *dest)
 {
     uint8_t rawData[6];                                                         // x/y/z accel register data stored here
     SENSOR_RegReadBytes(MPU6050_ADDRESS, MPU6050_ACCEL_XOUT_H, 6, &rawData[0]); // Read the six raw data registers into data array
@@ -154,7 +148,7 @@ void ReadAccelRaw(int16_t *dest)
  * @brief read raw gyroscope data
  * @param dest destination array to store data
  */
-void ReadGyroRaw(int16_t *dest)
+void MPU_ReadGyroRaw(int16_t *dest)
 {
     uint8_t rawData[6];                                                        // x/y/z gyro register data stored here
     SENSOR_RegReadBytes(MPU6050_ADDRESS, MPU6050_GYRO_XOUT_H, 6, &rawData[0]); // Read the six raw data registers sequentially into data array
@@ -167,7 +161,7 @@ void ReadGyroRaw(int16_t *dest)
  * @brief read raw gyroscope data
  * @param dest destination array to store data
  */
-void ReadMagRaw(int16_t *dest)
+void HMC_ReadMagRaw(int16_t *dest)
 {
     uint8_t rawData[6];                                                      // x/y/z gyro register data stored here
     SENSOR_RegReadBytes(HMC5883L_ADDRESS, HMC5883L_OUT_X_H, 6, &rawData[0]); // Read the six raw data registers sequentially into data array
@@ -175,17 +169,6 @@ void ReadMagRaw(int16_t *dest)
     dest[1] = ((int16_t)rawData[4] << 8) | rawData[5];
     dest[2] = ((int16_t)rawData[2] << 8) | rawData[3];
 }
-
-// /**
-//  * @brief read raw temperature
-//  * @return int16_t data read
-//  */
-// int16_t ReadTempRaw(void)
-// {
-//     uint8_t rawData[2];                                            // x/y/z gyro register data stored here
-//     SENSOR_RegReadBytes(MPU6050_ADDRESS, TEMP_OUT_H, 2, &rawData[0]); // Read the two raw data registers sequentially into data array
-//     return ((int16_t)rawData[0]) << 8 | rawData[1];                // Turn the MSB and LSB into a 16-bit value
-// }
 
 /**
  * @brief to test if mpu is connected
@@ -206,6 +189,206 @@ bool MPU_Connect(void)
 
     printf("MPU is not connected. Please check it.\n");
     return false;
+}
+
+/**
+ * @brief to test if hmc is connected
+ * @return true hmc is connected
+ * @return false hmc is not connected
+ */
+bool HMC_Connect()
+{
+    uint8_t e, f, g;
+    SENSOR_RegReadBytes(HMC5883L_ADDRESS, HMC5883L_IDA, 1, &e); // Read WHO_AM_I register A for HMC5883L
+    SENSOR_RegReadBytes(HMC5883L_ADDRESS, HMC5883L_IDB, 1, &f); // Read WHO_AM_I register B for HMC5883L
+    SENSOR_RegReadBytes(HMC5883L_ADDRESS, HMC5883L_IDC, 1, &g); // Read WHO_AM_I register C for HMC5883L
+
+    printf("I AM %x %x %x,  I Should Be %x %x %x\n", e, f, g, HMC5883L_IDA_RETURN, HMC5883L_IDB_RETURN, HMC5883L_IDC_RETURN);
+
+    if (e == HMC5883L_IDA_RETURN && f == HMC5883L_IDB_RETURN && g == HMC5883L_IDC_RETURN)
+    {
+        printf("HMC is online...\n");
+        return true;
+    }
+
+    printf("HMC is not connected. Please check it.\n");
+    return false;
+}
+
+/**
+ * @brief Accelerometer and gyroscope self test; check calibration wrt factory settings
+ * @return true pass self test
+ * @return false fail self test
+ */
+bool MPU_SelfTest(void) // Should return percent deviation from factory trim values, +/- 14 or less deviation is a pass
+{
+    uint8_t rawData[6];
+    uint8_t selfTest[6];
+    float factoryTrim[6];
+    float destination[6];
+    int32_t gAvg[3] = {0}, aAvg[3] = {0}, aSTAvg[3] = {0}, gSTAvg[3] = {0};
+
+    SENSOR_RegReadBytes(MPU6050_ADDRESS, MPU6050_SELF_TEST_X, 4, rawData);
+
+    // Extract the acceleration test results first
+    selfTest[0] = (rawData[0] >> 3) | (rawData[3] & 0x30) >> 4; // XA_TEST result is a five-bit unsigned integer
+    selfTest[1] = (rawData[1] >> 3) | (rawData[3] & 0x0C) >> 2; // YA_TEST result is a five-bit unsigned integer
+    selfTest[2] = (rawData[2] >> 3) | (rawData[3] & 0x03);      // ZA_TEST result is a five-bit unsigned integer
+    // Extract the gyration test results first
+    selfTest[3] = rawData[0] & 0x1F; // XG_TEST result is a five-bit unsigned integer
+    selfTest[4] = rawData[1] & 0x1F; // YG_TEST result is a five-bit unsigned integer
+    selfTest[5] = rawData[2] & 0x1F; // ZG_TEST result is a five-bit unsigned integer
+    // Process results to allow final comparison with factory set values
+    factoryTrim[0] = (4096.0f * 0.34f) * (powf((0.92f / 0.34f), (((float)selfTest[0] - 1.0f) / 30.0f))); // FT[Xa] factory trim calculation
+    factoryTrim[1] = (4096.0f * 0.34f) * (powf((0.92f / 0.34f), (((float)selfTest[1] - 1.0f) / 30.0f))); // FT[Ya] factory trim calculation
+    factoryTrim[2] = (4096.0f * 0.34f) * (powf((0.92f / 0.34f), (((float)selfTest[2] - 1.0f) / 30.0f))); // FT[Za] factory trim calculation
+    factoryTrim[3] = (25.0f * 131.0f) * (powf(1.046f, ((float)selfTest[3] - 1.0f)));                     // FT[Xg] factory trim calculation
+    factoryTrim[4] = (-25.0f * 131.0f) * (powf(1.046f, ((float)selfTest[4] - 1.0f)));                    // FT[Yg] factory trim calculation
+    factoryTrim[5] = (25.0f * 131.0f) * (powf(1.046f, ((float)selfTest[5] - 1.0f)));                     // FT[Zg] factory trim calculation
+
+    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_ACCEL_CONFIG, 0x10); // disable self test on all three axes and set accelerometer range to +/- 8 g
+    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_GYRO_CONFIG, 0x00);  // diaable self test on all three axes and set gyro range to +/- 250 degrees/s
+    HAL_Delay(50);                                                    // Delay a while to let the device execute the self-test
+
+    for (int ii = 0; ii < 200; ii++)
+    { // get average current values of gyro and acclerometer
+
+        SENSOR_RegReadBytes(MPU6050_ADDRESS, MPU6050_ACCEL_XOUT_H, 6, &rawData[0]); // Read the six raw data registers into data array
+        aAvg[0] += (int16_t)(((int16_t)rawData[0] << 8) | rawData[1]);              // Turn the MSB and LSB into a signed 16-bit value
+        aAvg[1] += (int16_t)(((int16_t)rawData[2] << 8) | rawData[3]);
+        aAvg[2] += (int16_t)(((int16_t)rawData[4] << 8) | rawData[5]);
+
+        SENSOR_RegReadBytes(MPU6050_ADDRESS, MPU6050_GYRO_XOUT_H, 6, &rawData[0]); // Read the six raw data registers sequentially into data array
+        gAvg[0] += (int16_t)(((int16_t)rawData[0] << 8) | rawData[1]);             // Turn the MSB and LSB into a signed 16-bit value
+        gAvg[1] += (int16_t)(((int16_t)rawData[2] << 8) | rawData[3]);
+        gAvg[2] += (int16_t)(((int16_t)rawData[4] << 8) | rawData[5]);
+    }
+
+    for (int ii = 0; ii < 3; ii++)
+    { // Get average of 200 values and store as average current readings
+        aAvg[ii] /= 200;
+        gAvg[ii] /= 200;
+    }
+
+    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_ACCEL_CONFIG, 0xF0); // Enable self test on all three axes and set accelerometer range to +/- 8 g
+    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_GYRO_CONFIG, 0xE0);  // Enable self test on all three axes and set gyro range to +/- 250 degrees/s
+    HAL_Delay(50);                                                    // Delay a while to let the device execute the self-test
+
+    for (int ii = 0; ii < 200; ii++)
+    { // get average self-test values of gyro and acclerometer
+
+        SENSOR_RegReadBytes(MPU6050_ADDRESS, MPU6050_ACCEL_XOUT_H, 6, &rawData[0]); // Read the six raw data registers into data array
+        aSTAvg[0] += (int16_t)(((int16_t)rawData[0] << 8) | rawData[1]);            // Turn the MSB and LSB into a signed 16-bit value
+        aSTAvg[1] += (int16_t)(((int16_t)rawData[2] << 8) | rawData[3]);
+        aSTAvg[2] += (int16_t)(((int16_t)rawData[4] << 8) | rawData[5]);
+
+        SENSOR_RegReadBytes(MPU6050_ADDRESS, MPU6050_GYRO_XOUT_H, 6, &rawData[0]); // Read the six raw data registers sequentially into data array
+        gSTAvg[0] += (int16_t)(((int16_t)rawData[0] << 8) | rawData[1]);           // Turn the MSB and LSB into a signed 16-bit value
+        gSTAvg[1] += (int16_t)(((int16_t)rawData[2] << 8) | rawData[3]);
+        gSTAvg[2] += (int16_t)(((int16_t)rawData[4] << 8) | rawData[5]);
+    }
+
+    for (int ii = 0; ii < 3; ii++)
+    { // Get average of 200 values and store as average self-test readings
+        aSTAvg[ii] /= 200;
+        gSTAvg[ii] /= 200;
+    }
+
+    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_ACCEL_CONFIG, 0x10); // disable self test on all three axes and set accelerometer range to +/- 8 g
+    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_GYRO_CONFIG, 0x00);  // diaable self test on all three axes and set gyro range to +/- 250 degrees/s
+
+    // Report results as a ratio of (STR - FT)/FT; the change from Factory Trim of the Self-Test Response
+    // To get to percent, must multiply by 100 and subtract result from 100
+    for (int i = 0; i < 3; i++)
+    {
+        destination[i] = 100.f * ((float)(aSTAvg[i] - aAvg[i])) / factoryTrim[i] - 100.f;         // Report percent differences
+        destination[i + 3] = 100.f * ((float)(gSTAvg[i] - gAvg[i])) / factoryTrim[i + 3] - 100.f; // Report percent differences
+
+        if (destination[i] > 14.f || destination[i] < -14.f || destination[i + 3] > 14.f || destination[i + 3] < -14.f)
+        {
+            printf("MPU fail Selftest in destination[%d]:%.2f!\n", i, destination[i]);
+            return false;
+        }
+    }
+
+    printf("MPU pass Selftest!\n");
+    return true;
+}
+
+/**
+ * @brief Magnetometer self test; check calibration wrt factory settings
+ * @return true pass self test
+ * @return false fail self test
+ */
+bool HMC_SelfTest()
+{
+    int16_t selfTest[3] = {0, 0, 0};
+    //  Perform self-test and calculate temperature compensation bias
+    SENSOR_RegWriteByte(HMC5883L_ADDRESS, HMC5883L_CONFIG_A, 0x71); // set 8-average, 15 Hz default, positive self-test measurement
+    SENSOR_RegWriteByte(HMC5883L_ADDRESS, HMC5883L_CONFIG_B, 0xA0); // set gain (bits[7:5]) to 5
+    SENSOR_RegWriteByte(HMC5883L_ADDRESS, HMC5883L_MODE, 0x00);     // enable continuous data mode
+    HAL_Delay(150);                                                 // wait 150 ms
+
+    uint8_t rawData[6] = {0, 0, 0, 0, 0, 0};                                 // x/y/z gyro register data stored here
+    SENSOR_RegReadBytes(HMC5883L_ADDRESS, HMC5883L_OUT_X_H, 6, &rawData[0]); // Read the six raw data registers sequentially into data array
+    selfTest[0] = ((int16_t)rawData[0] << 8) | rawData[1];                   // Turn the MSB and LSB into a signed 16-bit value
+    selfTest[1] = ((int16_t)rawData[4] << 8) | rawData[5];
+    selfTest[2] = ((int16_t)rawData[2] << 8) | rawData[3];
+    SENSOR_RegWriteByte(HMC5883L_ADDRESS, HMC5883L_CONFIG_A, 0x70); // exit self test
+
+    for (int i = 0; i < 3; i++)
+    {
+        if (selfTest[i] > 575 || selfTest[i] < 243)
+        {
+            printf("HMC fail selftest in selfTest[%d]:%d!\n", i, selfTest[i]);
+            return false;
+        }
+    }
+
+    printf("HMC pass selftest!\n");
+    return true;
+}
+
+/**
+ * @brief calculate checksum from PROM register contents
+ * @param n_prom
+ * @return true
+ * @return false
+ */
+bool MS_CheckCRC(uint16_t *n_prom)
+{
+    int cnt;               // simple counter
+    unsigned int n_rem;    // crc reminder
+    unsigned int crc_read; // original value of the crc
+    unsigned char n_bit;
+    n_rem = 0x00;
+    crc_read = n_prom[7];               // save read CRC
+    n_prom[7] = (0xFF00 & (n_prom[7])); // CRC byte is replaced by 0
+    for (cnt = 0; cnt < 16; cnt++)      // operation is performed on bytes
+    {                                   // choose LSB or MSB
+        if (cnt % 2 == 1)
+            n_rem ^= (unsigned short)((n_prom[cnt >> 1]) & 0x00FF);
+        else
+            n_rem ^= (unsigned short)(n_prom[cnt >> 1] >> 8);
+        for (n_bit = 8; n_bit > 0; n_bit--)
+        {
+            if (n_rem & (0x8000))
+            {
+                n_rem = (n_rem << 1) ^ 0x3000;
+            }
+            else
+            {
+                n_rem = (n_rem << 1);
+            }
+        }
+    }
+    n_rem = (0x000F & (n_rem >> 12)); // // final 4-bit reminder is CRC code
+    n_prom[7] = crc_read;             // restore the crc_read to its original place
+
+    //    return (n_rem ^ 0x00);
+
+    printf("Checksum = %d, should be %d\n", n_rem, crc_read);
+    return true;
 }
 
 /**
@@ -365,88 +548,62 @@ void MPU_Calibrate(float *gyrobias, float *accbias)
 
     printf("MPU6050 bias\n");
     printf(" x\t  y\t  z  \n");
-    printf("%d\t%d\t%d\t mg\n", (int)(1000 * accelBias.array[0]), (int)(1000 * accelBias.array[1]), (int)(1000 * accelBias.array[2]));
-    printf("%.1f\t%.1f\t%.1f\t o/s\n", gyroBias.array[0], gyroBias.array[1], gyroBias.array[2]);
+    printf("%f\t%f\t%f\t mg\n", accelBias.array[0],accelBias.array[1],accelBias.array[2]);
+    printf("%f\t%f\t%f\t °/s\n", gyroBias.array[0], gyroBias.array[1], gyroBias.array[2]);
 }
 
-/**
- * @brief Accelerometer and gyroscope self test; check calibration wrt factory settings
- * @return true pass self test
- * @return false fail self test
- */
-bool MPU_SelfTest(void) // Should return percent deviation from factory trim values, +/- 14 or less deviation is a pass
+void HMC_Calibration(float *magbias, float *magscale)
 {
-    uint8_t rawData[4];
-    uint8_t selfTest[6];
-    float factoryTrim[6];
-    float destination[6];
+    int ii = 0;
+    int32_t mag_bias[3] = {0, 0, 0}, mag_scale[3] = {0, 0, 0};
+    int16_t mag_max[3] = {-32767, -32767, -32767}, mag_min[3] = {32767, 32767, 32767}, mag_temp[3] = {0, 0, 0};
 
-    // Configure the accelerometer for self-test
-    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_ACCEL_CONFIG, 0xF0); // Enable self test on all three axes and set accelerometer range to +/- 8 g
-    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_GYRO_CONFIG, 0xE0);  // Enable self test on all three axes and set gyro range to +/- 250 degrees/s
-    HAL_Delay(250);                                                   // Delay a while to let the device execute the self-test
+    printf("Mag Calibration: Wave device in a figure eight until done!\n");
+    HAL_Delay(1000);
 
-    SENSOR_RegReadBytes(MPU6050_ADDRESS, MPU6050_SELF_TEST_X, 4, rawData);
-    // rawData[0] = SENSOR_ReadByte(MPU6050_ADDRESS, MPU6050_SELF_TEST_X); // X-axis self-test results
-    // rawData[1] = SENSOR_ReadByte(MPU6050_ADDRESS, MPU6050_SELF_TEST_Y); // Y-axis self-test results
-    // rawData[2] = SENSOR_ReadByte(MPU6050_ADDRESS, MPU6050_SELF_TEST_Z); // Z-axis self-test results
-    // rawData[3] = SENSOR_ReadByte(MPU6050_ADDRESS, MPU6050_SELF_TEST_A); // Mixed-axis self-test results
-
-    // Extract the acceleration test results first
-    selfTest[0] = (rawData[0] >> 3) | (rawData[3] & 0x30) >> 4; // XA_TEST result is a five-bit unsigned integer
-    selfTest[1] = (rawData[1] >> 3) | (rawData[3] & 0x0C) >> 2; // YA_TEST result is a five-bit unsigned integer
-    selfTest[2] = (rawData[2] >> 3) | (rawData[3] & 0x03);      // ZA_TEST result is a five-bit unsigned integer
-    // Extract the gyration test results first
-    selfTest[3] = rawData[0] & 0x1F; // XG_TEST result is a five-bit unsigned integer
-    selfTest[4] = rawData[1] & 0x1F; // YG_TEST result is a five-bit unsigned integer
-    selfTest[5] = rawData[2] & 0x1F; // ZG_TEST result is a five-bit unsigned integer
-    // Process results to allow final comparison with factory set values
-    factoryTrim[0] = (4096.0f * 0.34f) * (powf((0.92f / 0.34f), (((float)selfTest[0] - 1.0f) / 30.0f))); // FT[Xa] factory trim calculation
-    factoryTrim[1] = (4096.0f * 0.34f) * (powf((0.92f / 0.34f), (((float)selfTest[1] - 1.0f) / 30.0f))); // FT[Ya] factory trim calculation
-    factoryTrim[2] = (4096.0f * 0.34f) * (powf((0.92f / 0.34f), (((float)selfTest[2] - 1.0f) / 30.0f))); // FT[Za] factory trim calculation
-    factoryTrim[3] = (25.0f * 131.0f) * (powf(1.046f, ((float)selfTest[3] - 1.0f)));                     // FT[Xg] factory trim calculation
-    factoryTrim[4] = (-25.0f * 131.0f) * (powf(1.046f, ((float)selfTest[4] - 1.0f)));                    // FT[Yg] factory trim calculation
-    factoryTrim[5] = (25.0f * 131.0f) * (powf(1.046f, ((float)selfTest[5] - 1.0f)));                     // FT[Zg] factory trim calculation
-
-    //  Output self-test results and factory trim calculation if desired
-    //  Serial.println(selfTest[0]); Serial.println(selfTest[1]); Serial.println(selfTest[2]);
-    //  Serial.println(selfTest[3]); Serial.println(selfTest[4]); Serial.println(selfTest[5]);
-    //  Serial.println(factoryTrim[0]); Serial.println(factoryTrim[1]); Serial.println(factoryTrim[2]);
-    //  Serial.println(factoryTrim[3]); Serial.println(factoryTrim[4]); Serial.println(factoryTrim[5]);
-
-    // Report results as a ratio of (STR - FT)/FT; the change from Factory Trim of the Self-Test Response
-    // To get to percent, must multiply by 100 and subtract result from 100
-    for (int i = 0; i < 6; i++)
+    while (ii < 1500)
     {
-        destination[i] = 100.0f + 100.0f * ((float)selfTest[i] - factoryTrim[i]) / factoryTrim[i]; // Report percent differences
+        uint8_t status = 0;
+        SENSOR_RegWriteByte(HMC5883L_ADDRESS, HMC5883L_MODE, 0X01);
+        SENSOR_RegReadBytes(HMC5883L_ADDRESS, HMC5883L_STATUS, 1, &status);
+        if (status & 0x01)
+        {
+            ii++;
+            HMC_ReadMagRaw(mag_temp); // Read the mag data
+            for (int jj = 0; jj < 3; jj++)
+            {
+                if (mag_temp[jj] > mag_max[jj]) mag_max[jj] = mag_temp[jj];
+                if (mag_temp[jj] < mag_min[jj]) mag_min[jj] = mag_temp[jj];
+            }
+        }
     }
 
-    printf("x-axis self test: acceleration trim within : ");
-    printf("%.2f", destination[0]);
-    printf("%% of factory value\n");
-    printf("y-axis self test: acceleration trim within : ");
-    printf("%.2f", destination[1]);
-    printf("%% of factory value\n");
-    printf("z-axis self test: acceleration trim within : ");
-    printf("%.2f", destination[2]);
-    printf("%% of factory value\n");
-    printf("x-axis self test: gyration trim within : ");
-    printf("%.2f", destination[3]);
-    printf("%% of factory value\n");
-    printf("y-axis self test: gyration trim within : ");
-    printf("%.2f", destination[4]);
-    printf("%% of factory value\n");
-    printf("z-axis self test: gyration trim within : ");
-    printf("%.2f", destination[5]);
-    printf("%% of factory value\n");
+    SENSOR_RegWriteByte(HMC5883L_ADDRESS, HMC5883L_MODE, 0X00);
 
-    if (destination[0] < 1.0f && destination[1] < 1.0f && destination[2] < 1.0f && destination[3] < 1.0f && destination[4] < 1.0f && destination[5] < 1.0f)
-    {
-        printf("MPU pass Selftest!\n");
-        return true;
-    }
+    printf("mag x min: %d   max:%d\n", mag_min[0], mag_max[0]);
+    printf("mag y min: %d   max:%d\n", mag_min[1], mag_max[1]);
+    printf("mag z min: %d   max:%d\n", mag_min[2], mag_max[2]);
 
-    return false;
+    // Get hard iron correction
+    for (int i = 0; i < 3; i++)
+        mag_bias[i] = (mag_max[i] + mag_min[i]) / 2; // get average x y zmag bias in counts
+
+    for (int i = 0; i < 3; i++)
+        magbias[i] = mag_bias[i] * mRes[Mscale]; // save mag biases in G for main program
+
+    // Get soft iron correction estimate
+    for (int i = 0; i < 3; i++)
+        mag_scale[i] = (mag_max[i] - mag_min[i]) / 2; // get average x  y zaxis max chord length in counts
+
+    float avg_rad = (mag_scale[0] + mag_scale[1] + mag_scale[2]) / 3.f;
+
+    for (int i = 0; i < 3; i++)
+        magscale[i] = avg_rad / ((float)mag_scale[i]);
+
+    printf("HMC5883L bias and scale\n");
+    printf(" x\t  y\t  z  \n");
+    printf("%.1f\t%.1f\t%.1f\t bias\n", magbias[0], magbias[1], magbias[2]);
+    printf("%.1f\t%.1f\t%.1f\t scale\n", magscale[0], magscale[1], magscale[2]);
 }
 
 /**
@@ -493,55 +650,9 @@ void MPU_Init(void)
 }
 
 /**
- * @brief to test if hmc is connected
- * @return true hmc is connected
- * @return false hmc is not connected
+ * @brief HMC Initialize
  */
-bool HMC_Connect()
-{
-    uint8_t e, f, g;
-    SENSOR_RegReadBytes(HMC5883L_ADDRESS, HMC5883L_IDA, 1, &e); // Read WHO_AM_I register A for HMC5883L
-    SENSOR_RegReadBytes(HMC5883L_ADDRESS, HMC5883L_IDB, 1, &f); // Read WHO_AM_I register B for HMC5883L
-    SENSOR_RegReadBytes(HMC5883L_ADDRESS, HMC5883L_IDC, 1, &g); // Read WHO_AM_I register C for HMC5883L
-
-    printf("I AM %x %x %x,  I Should Be %x %x %x\n", e, f, g, HMC5883L_IDA_RETURN, HMC5883L_IDB_RETURN, HMC5883L_IDC_RETURN);
-
-    if (e == HMC5883L_IDA_RETURN && f == HMC5883L_IDB_RETURN && g == HMC5883L_IDC_RETURN)
-    {
-        printf("HMC is online...\n");
-        return true;
-    }
-
-    printf("HMC is not connected. Please check it.\n");
-    return false;
-}
-
-bool HMC_SelfTest()
-{
-    int16_t selfTest[3] = {0, 0, 0};
-    //  Perform self-test and calculate temperature compensation bias
-    SENSOR_RegWriteByte(HMC5883L_ADDRESS, HMC5883L_CONFIG_A, 0x71); // set 8-average, 15 Hz default, positive self-test measurement
-    SENSOR_RegWriteByte(HMC5883L_ADDRESS, HMC5883L_CONFIG_B, 0xA0); // set gain (bits[7:5]) to 5
-    SENSOR_RegWriteByte(HMC5883L_ADDRESS, HMC5883L_MODE, 0x80);     // enable continuous data mode
-    HAL_Delay(150);                                                 // wait 150 ms
-
-    uint8_t rawData[6] = {0, 0, 0, 0, 0, 0};                                 // x/y/z gyro register data stored here
-    SENSOR_RegReadBytes(HMC5883L_ADDRESS, HMC5883L_OUT_X_H, 6, &rawData[0]); // Read the six raw data registers sequentially into data array
-    selfTest[0] = ((int16_t)rawData[0] << 8) | rawData[1];                   // Turn the MSB and LSB into a signed 16-bit value
-    selfTest[1] = ((int16_t)rawData[4] << 8) | rawData[5];
-    selfTest[2] = ((int16_t)rawData[2] << 8) | rawData[3];
-    SENSOR_RegWriteByte(HMC5883L_ADDRESS, HMC5883L_CONFIG_A, 0x00); // exit self test
-
-    if (selfTest[0] < 575 && selfTest[0] > 243 && selfTest[1] < 575 && selfTest[1] > 243 && selfTest[2] < 575 && selfTest[2] > 243)
-    {
-        printf("HMC pass selftest\n");
-        return true;
-    }
-
-    return false;
-}
-
-void HMC_Init()
+void HMC_Init(void)
 {
     HMC_SelfTest();
     SENSOR_RegWriteByte(HMC5883L_ADDRESS, HMC5883L_CONFIG_A, 0x78);        // Set magnetomer ODR to 75 Hz and number of samples averaged to 8
@@ -549,177 +660,24 @@ void HMC_Init()
     SENSOR_RegWriteByte(HMC5883L_ADDRESS, HMC5883L_MODE, 0x80);            // enable continuous data mode
 }
 
-// uint32_t ReadTempRaw(void)
-// {
-//     SENSOR_WriteByte(MS5611_ADDRESS, MS5611_CMD_CONV_D2 + MSosr);
+/**
+ * @brief MS Initialize
+ */
+void MS_Init(void)
+{
+    uint16_t c[8];
 
-//     delay(ct);
-//     return HAL_I2C_Master_Receive(hi2c1, ) return readRegister24(MS5611_CMD_ADC_READ);
-// }
+    SENSOR_WriteByte(MS5611_ADDRESS, MS5611_CMD_RESET);
+    HAL_Delay(100);
 
-// void MS_ReadPROM(uint16_t *dest)
-// {
-//     for (uint8_t i = 0; i < 6; i++)
-//     {
-//         dest[i] = readRegister16(MS5611_CMD_READ_PROM + (i * 2));
-//     }
-// }
+    for (int i = 0; i < 8; i++)
+    {
+        uint8_t temp[2] = {0};
+        SENSOR_WriteByte(MS5611_ADDRESS, MS5611_CMD_READ_PROM | i << 1);
+		HAL_Delay(5);
+        SENSOR_ReadBytes(MS5611_ADDRESS, 2, temp);
+        c[i] = (uint16_t)((temp[0] << 8) | temp[1]);
+    }
 
-// void MS_Init()
-// {
-//     SENSOR_WriteByte(MS5611_ADDRESS, MS5611_CMD_RESET); // reset
-//     HAL_Delay(100);
-
-//     MS_ReadPROM(&msBias);
-// }
-
-// uint32_t MS5611::readRawPressure(void)
-// {
-//     Wire.beginTransmission(MS5611_ADDRESS);
-
-// #if ARDUINO >= 100
-//     Wire.write(MS5611_CMD_CONV_D1 + uosr);
-// #else
-//     Wire.send(MS5611_CMD_CONV_D1 + uosr);
-// #endif
-
-//     Wire.endTransmission();
-
-//     delay(ct);
-
-//     return readRegister24(MS5611_CMD_ADC_READ);
-// }
-
-// int32_t MS5611::readPressure(bool compensation)
-// {
-//     uint32_t D1 = readRawPressure();
-
-//     uint32_t D2 = readRawTemperature();
-//     int32_t dT = D2 - (uint32_t)fc[4] * 256;
-
-//     int64_t OFF = (int64_t)fc[1] * 65536 + (int64_t)fc[3] * dT / 128;
-//     int64_t SENS = (int64_t)fc[0] * 32768 + (int64_t)fc[2] * dT / 256;
-
-//     if (compensation)
-//     {
-//         int32_t TEMP = 2000 + ((int64_t)dT * fc[5]) / 8388608;
-
-//         OFF2 = 0;
-//         SENS2 = 0;
-
-//         if (TEMP < 2000)
-//         {
-//             OFF2 = 5 * ((TEMP - 2000) * (TEMP - 2000)) / 2;
-//             SENS2 = 5 * ((TEMP - 2000) * (TEMP - 2000)) / 4;
-//         }
-
-//         if (TEMP < -1500)
-//         {
-//             OFF2 = OFF2 + 7 * ((TEMP + 1500) * (TEMP + 1500));
-//             SENS2 = SENS2 + 11 * ((TEMP + 1500) * (TEMP + 1500)) / 2;
-//         }
-
-//         OFF = OFF - OFF2;
-//         SENS = SENS - SENS2;
-//     }
-
-//     uint32_t P = (D1 * SENS / 2097152 - OFF) / 32768;
-
-//     return P;
-// }
-
-// double MS5611::readTemperature(bool compensation)
-// {
-//     uint32_t D2 = readRawTemperature();
-//     int32_t dT = D2 - (uint32_t)fc[4] * 256;
-
-//     int32_t TEMP = 2000 + ((int64_t)dT * fc[5]) / 8388608;
-
-//     TEMP2 = 0;
-
-//     if (compensation)
-//     {
-//         if (TEMP < 2000)
-//         {
-//             TEMP2 = (dT * dT) / (2 << 30);
-//         }
-//     }
-
-//     TEMP = TEMP - TEMP2;
-
-//     return ((double)TEMP / 100);
-// }
-
-// // Calculate altitude from Pressure & Sea level pressure
-// double MS5611::getAltitude(double pressure, double seaLevelPressure)
-// {
-//     return (44330.0f * (1.0f - pow((double)pressure / (double)seaLevelPressure, 0.1902949f)));
-// }
-
-// // Calculate sea level from Pressure given on specific altitude
-// float GetSeaLevel(double pressure, double altitude)
-// {
-//     return ((double)pressure / pow(1.0f - ((double)altitude / 44330.0f), 5.255f));
-// }
-
-// // Read 16-bit from register (oops MSB, LSB)
-// uint16_t MS5611::readRegister16(uint8_t reg)
-// {
-//     uint16_t value;
-//     Wire.beginTransmission(MS5611_ADDRESS);
-// #if ARDUINO >= 100
-//     Wire.write(reg);
-// #else
-//     Wire.send(reg);
-// #endif
-//     Wire.endTransmission();
-
-//     Wire.beginTransmission(MS5611_ADDRESS);
-//     Wire.requestFrom(MS5611_ADDRESS, 2);
-//     while (!Wire.available())
-//     {};
-// #if ARDUINO >= 100
-//     uint8_t vha = Wire.read();
-//     uint8_t vla = Wire.read();
-// #else
-//     uint8_t vha = Wire.receive();
-//     uint8_t vla = Wire.receive();
-// #endif;
-//     Wire.endTransmission();
-
-//     value = vha << 8 | vla;
-
-//     return value;
-// }
-
-// // Read 24-bit from register (oops XSB, MSB, LSB)
-// uint32_t MS_ReadRegister24(uint8_t reg)
-// {
-//     uint32_t value;
-//     Wire.beginTransmission(MS5611_ADDRESS);
-// #if ARDUINO >= 100
-//     Wire.write(reg);
-// #else
-//     Wire.send(reg);
-// #endif
-//     Wire.endTransmission();
-
-//     Wire.beginTransmission(MS5611_ADDRESS);
-//     Wire.requestFrom(MS5611_ADDRESS, 3);
-//     while (!Wire.available())
-//     {};
-// #if ARDUINO >= 100
-//     uint8_t vxa = Wire.read();
-//     uint8_t vha = Wire.read();
-//     uint8_t vla = Wire.read();
-// #else
-//     uint8_t vxa = Wire.receive();
-//     uint8_t vha = Wire.receive();
-//     uint8_t vla = Wire.receive();
-// #endif;
-//     Wire.endTransmission();
-
-//     value = ((int32_t)vxa << 16) | ((int32_t)vha << 8) | vla;
-
-//     return value;
-// }
+    MS_CheckCRC(c); // calculate checksum to ensure integrity of MS5611 calibration data
+}
