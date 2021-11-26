@@ -152,9 +152,9 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>112</LineNumber>
+          <LineNumber>56</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134246036</Address>
+          <Address>134247410</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -163,23 +163,7 @@
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>..\DRIVER\sensor.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\FLIGHT\../DRIVER/sensor.c\112</Expression>
-        </Bp>
-        <Bp>
-          <Number>1</Number>
-          <Type>0</Type>
-          <LineNumber>114</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>134246040</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\DRIVER\sensor.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression>\\FLIGHT\../DRIVER/sensor.c\114</Expression>
+          <Expression>\\FLIGHT\../DRIVER/sensor.c\56</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -207,6 +191,16 @@
           <count>4</count>
           <WinNumber>1</WinNumber>
           <ItemText>c</ItemText>
+        </Ww>
+        <Ww>
+          <count>5</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>altitude</ItemText>
+        </Ww>
+        <Ww>
+          <count>6</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>initialPressure,0x0A</ItemText>
         </Ww>
       </WatchWindow1>
       <Tracepoint>

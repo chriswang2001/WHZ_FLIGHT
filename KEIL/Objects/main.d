@@ -37,6 +37,10 @@
 .\objects\main.o: ..\LIB\Inc\stm32f4xx_hal_tim_ex.h
 .\objects\main.o: ..\LIB\Inc\stm32f4xx_hal_uart.h
 .\objects\main.o: ..\DRIVER\sys.h
-.\objects\main.o: ..\DRIVER\sensor.h
-.\objects\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\objects\main.o: ..\uCOS\ucos_ii.h
+.\objects\main.o: ..\uCOS\app_cfg.h
+.\objects\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
 .\objects\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+.\objects\main.o: ..\uCOS\os_cfg.h
+.\objects\main.o: ..\uCOS\os_cpu.h
+.\objects\main.o: ..\uCOS\os_trace.h

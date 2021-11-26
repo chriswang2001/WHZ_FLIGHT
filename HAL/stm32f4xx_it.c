@@ -56,10 +56,8 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern TIM_HandleTypeDef htim1;
-extern TIM_HandleTypeDef htim2;
 extern DMA_HandleTypeDef hdma_usart2_tx;
-extern UART_HandleTypeDef huart2;
+
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -168,32 +166,32 @@ void DebugMon_Handler(void)
     /* USER CODE END DebugMonitor_IRQn 1 */
 }
 
-/**
- * @brief This function handles Pendable request for system service.
- */
-void PendSV_Handler(void)
-{
-    /* USER CODE BEGIN PendSV_IRQn 0 */
+// /**
+//  * @brief This function handles Pendable request for system service.
+//  */
+// void PendSV_Handler(void)
+// {
+//     /* USER CODE BEGIN PendSV_IRQn 0 */
 
-    /* USER CODE END PendSV_IRQn 0 */
-    /* USER CODE BEGIN PendSV_IRQn 1 */
+//     /* USER CODE END PendSV_IRQn 0 */
+//     /* USER CODE BEGIN PendSV_IRQn 1 */
 
-    /* USER CODE END PendSV_IRQn 1 */
-}
+//     /* USER CODE END PendSV_IRQn 1 */
+// }
 
-/**
- * @brief This function handles System tick timer.
- */
-void SysTick_Handler(void)
-{
-    /* USER CODE BEGIN SysTick_IRQn 0 */
+// /**
+//  * @brief This function handles System tick timer.
+//  */
+// void SysTick_Handler(void)
+// {
+//     /* USER CODE BEGIN SysTick_IRQn 0 */
 
-    /* USER CODE END SysTick_IRQn 0 */
-    HAL_IncTick();
-    /* USER CODE BEGIN SysTick_IRQn 1 */
+//     /* USER CODE END SysTick_IRQn 0 */
+//     HAL_IncTick();
+//     /* USER CODE BEGIN SysTick_IRQn 1 */
 
-    /* USER CODE END SysTick_IRQn 1 */
-}
+//     /* USER CODE END SysTick_IRQn 1 */
+// }
 
 /******************************************************************************/
 /* STM32F4xx Peripheral Interrupt Handlers                                    */
@@ -207,12 +205,17 @@ void SysTick_Handler(void)
  */
 void DMA1_Stream6_IRQHandler(void)
 {
+#if OS_CRITICAL_METHOD == 3u /* Allocate storage for CPU status register             */
+    OS_CPU_SR cpu_sr;
+#endif
     /* USER CODE BEGIN DMA1_Stream6_IRQn 0 */
-
+    OS_ENTER_CRITICAL();
+    OSIntEnter(); /* Tell uC/OS-II that we are starting an ISR            */
+    OS_EXIT_CRITICAL();
     /* USER CODE END DMA1_Stream6_IRQn 0 */
     HAL_DMA_IRQHandler(&hdma_usart2_tx);
     /* USER CODE BEGIN DMA1_Stream6_IRQn 1 */
-
+    OSIntExit(); /* Tell uC/OS-II that we are leaving the ISR            */
     /* USER CODE END DMA1_Stream6_IRQn 1 */
 }
 

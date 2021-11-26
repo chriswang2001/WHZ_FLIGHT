@@ -82,7 +82,7 @@ ARM Macro Assembler    Page 2
    49 00000000                 EXPORT           OS_CPU_SR_Restore
    50 00000000                 EXPORT           OSCtxSw
    51 00000000                 EXPORT           OSIntCtxSw
-   52 00000000                 EXPORT           OS_CPU_PendSVHandler
+   52 00000000                 EXPORT           PendSV_Handler
    53 00000000         
    54 00000000                 IF               {FPU} != "SoftVFP"
    55 00000000                 EXPORT           OS_CPU_FP_Reg_Push
@@ -536,7 +536,7 @@ ARM Macro Assembler    Page 9
   327 000000AE         ;*******************************************************
                        *************************************************
   328 000000AE         
-  329 000000AE         OS_CPU_PendSVHandler
+  329 000000AE         PendSV_Handler
   330 000000AE B672            CPSID            I           ; Cortex-M7 errata 
                                                             notice. See Note #5
                                                             
@@ -696,23 +696,15 @@ Symbol: OS_CPU_FP_nosave
    Uses
       At line 95 in file ..\uCOS\os_cpu_a.asm
 Comment: OS_CPU_FP_nosave used once
-OS_CPU_PendSVHandler 000000AE
+OS_CPU_SR_Restore 0000003A
 
-Symbol: OS_CPU_PendSVHandler
+Symbol: OS_CPU_SR_Restore
 
 
 
 ARM Macro Assembler    Page 2 Alphabetic symbol ordering
 Relocatable symbols
 
-   Definitions
-      At line 329 in file ..\uCOS\os_cpu_a.asm
-   Uses
-      At line 52 in file ..\uCOS\os_cpu_a.asm
-Comment: OS_CPU_PendSVHandler used once
-OS_CPU_SR_Restore 0000003A
-
-Symbol: OS_CPU_SR_Restore
    Definitions
       At line 186 in file ..\uCOS\os_cpu_a.asm
    Uses
@@ -726,6 +718,14 @@ Symbol: OS_CPU_SR_Save
    Uses
       At line 48 in file ..\uCOS\os_cpu_a.asm
 Comment: OS_CPU_SR_Save used once
+PendSV_Handler 000000AE
+
+Symbol: PendSV_Handler
+   Definitions
+      At line 329 in file ..\uCOS\os_cpu_a.asm
+   Uses
+      At line 52 in file ..\uCOS\os_cpu_a.asm
+Comment: PendSV_Handler used once
 10 symbols
 
 

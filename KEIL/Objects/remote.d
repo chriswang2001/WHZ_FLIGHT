@@ -36,7 +36,15 @@
 .\objects\remote.o: ..\LIB\Inc\stm32f4xx_hal_tim.h
 .\objects\remote.o: ..\LIB\Inc\stm32f4xx_hal_tim_ex.h
 .\objects\remote.o: ..\LIB\Inc\stm32f4xx_hal_uart.h
-.\objects\remote.o: ..\HAL\tim.h
+.\objects\remote.o: ..\DRIVER\motor.h
 .\objects\remote.o: ..\APP\main.h
 .\objects\remote.o: ..\DRIVER\sys.h
+.\objects\remote.o: ..\uCOS\ucos_ii.h
+.\objects\remote.o: ..\uCOS\app_cfg.h
+.\objects\remote.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
+.\objects\remote.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+.\objects\remote.o: ..\uCOS\os_cfg.h
+.\objects\remote.o: ..\uCOS\os_cpu.h
+.\objects\remote.o: ..\uCOS\os_trace.h
+.\objects\remote.o: ..\HAL\tim.h
 .\objects\remote.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h

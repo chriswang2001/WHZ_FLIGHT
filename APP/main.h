@@ -19,6 +19,7 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
 #include "sys.h"
+#include "ucos_ii.h"
 
 /* Exported types ------------------------------------------------------------*/
 enum
@@ -92,6 +93,14 @@ typedef union
         float yaw;
     } angle;
 } EulerAngles;
+
+typedef struct
+{
+    float roll;
+    float pitch;
+    float yaw;
+    float altitude;
+} control_t;
 
 #ifdef __cplusplus
 }

@@ -8,6 +8,7 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
+#include "main.h"
 #include "stm32f4xx.h"
 #include "usart.h"
 #include <stdbool.h>
@@ -524,6 +525,14 @@ void ANO_Receive_Prepare(uint8_t byte)
  */
 void USART2_IRQHandler(void)
 {
+#if OS_CRITICAL_METHOD == 3u /* Allocate storage for CPU status register             */
+    OS_CPU_SR cpu_sr;
+#endif
+
+    OS_ENTER_CRITICAL();
+    OSIntEnter(); /* Tell uC/OS-II that we are starting an ISR            */
+    OS_EXIT_CRITICAL();
+
     if (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_RXNE) != RESET)
     {
         uint8_t ch = READ_REG(huart2.Instance->DR);
@@ -540,4 +549,6 @@ void USART2_IRQHandler(void)
     }
     else
         HAL_UART_IRQHandler(&huart2);
+
+    OSIntExit(); /* Tell uC/OS-II that we are leaving the ISR            */
 }

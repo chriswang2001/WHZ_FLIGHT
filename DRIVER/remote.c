@@ -9,6 +9,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "remote.h"
+#include "motor.h"
 #include "tim.h"
 #include <stdbool.h>
 
@@ -93,6 +94,13 @@ static inline void TIM_CC_Handler(int8_t cc, TIM_HandleTypeDef *htim)
  */
 void TIM1_CC_IRQHandler(void)
 {
+#if OS_CRITICAL_METHOD == 3u /* Allocate storage for CPU status register             */
+    OS_CPU_SR cpu_sr;
+#endif
+    OS_ENTER_CRITICAL();
+    OSIntEnter(); /* Tell uC/OS-II that we are starting an ISR            */
+    OS_EXIT_CRITICAL();
+
     int8_t cc = -1;
 
     if (__HAL_TIM_GET_FLAG(&htim1, TIM_FLAG_CC1) != RESET)
@@ -107,6 +115,8 @@ void TIM1_CC_IRQHandler(void)
         HAL_TIM_IRQHandler(&htim1);
 
     TIM_CC_Handler(cc, &htim1);
+
+    OSIntExit(); /* Tell uC/OS-II that we are leaving the ISR            */
 }
 
 /**
@@ -114,6 +124,13 @@ void TIM1_CC_IRQHandler(void)
  */
 void TIM1_UP_TIM10_IRQHandler(void)
 {
+#if OS_CRITICAL_METHOD == 3u /* Allocate storage for CPU status register             */
+    OS_CPU_SR cpu_sr;
+#endif
+    OS_ENTER_CRITICAL();
+    OSIntEnter(); /* Tell uC/OS-II that we are starting an ISR            */
+    OS_EXIT_CRITICAL();
+
     if (__HAL_TIM_GET_FLAG(&htim1, TIM_FLAG_UPDATE) != RESET)
     {
         for (int i = 0; i < 4; i++)
@@ -122,6 +139,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
     }
     else
         HAL_TIM_IRQHandler(&htim1);
+
+    OSIntExit(); /* Tell uC/OS-II that we are leaving the ISR            */
 }
 
 /**
@@ -129,6 +148,13 @@ void TIM1_UP_TIM10_IRQHandler(void)
  */
 void TIM2_IRQHandler(void)
 {
+#if OS_CRITICAL_METHOD == 3u /* Allocate storage for CPU status register             */
+    OS_CPU_SR cpu_sr;
+#endif
+    OS_ENTER_CRITICAL();
+    OSIntEnter(); /* Tell uC/OS-II that we are starting an ISR            */
+    OS_EXIT_CRITICAL();
+
     int8_t cc = -1;
 
     if (__HAL_TIM_GET_FLAG(&htim2, TIM_FLAG_UPDATE) != RESET)
@@ -147,7 +173,12 @@ void TIM2_IRQHandler(void)
     else if (__HAL_TIM_GET_FLAG(&htim2, TIM_FLAG_CC3) != RESET)
         cc = 6;
     else
-        HAL_TIM_IRQHandler(&htim1);
+        HAL_TIM_IRQHandler(&htim2);
 
     TIM_CC_Handler(cc, &htim2);
+
+    if (rvalue[LOCK] < 1500)
+        MOTOR_Set(1000, 1000, 1000, 1000);
+
+    OSIntExit(); /* Tell uC/OS-II that we are leaving the ISR            */
 }

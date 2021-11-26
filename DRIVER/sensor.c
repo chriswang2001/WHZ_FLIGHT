@@ -27,6 +27,8 @@ float mRes[8] = {1.f / 1.37f, 1.f / 1.09f, 1.f / 0.82f, 1.f / 0.66f, 1.f / 0.44f
 
 FloatVector3 accel, gyro, mag;                                                    // Stores the real sensor value in g's, degrees per second, milliGauss
 FloatVector3 accelBias, gyroBias, magBias, magScale = {.array = {1.f, 1.f, 1.f}}; // Offser and scale calibration for sensor in g's, degrees per second, milliGauss
+uint16_t msPROM[8];
+float altitude, initialPressure = 1.f;
 
 void SENSOR_Task(void)
 {
@@ -49,6 +51,8 @@ void SENSOR_Task(void)
     {
         mag.array[i] = magCount.array[i] * mRes[Mscale] * magScale.array[i] - magBias.array[i]; // Calculate the magnetometer values in milliGauss
     }
+
+    altitude = 44330.0f * (1.0f - powf((float)MS_ReadPressure() / initialPressure, 0.1902949f));
 }
 
 /**
@@ -108,7 +112,7 @@ static bool SENSOR_RegWriteByte(uint8_t addr, uint8_t reg, uint8_t data)
 static bool SENSOR_ReadBytes(uint8_t addr, uint8_t length, uint8_t *data)
 {
 
-    if (HAL_I2C_Master_Receive(&hi2c1, addr, data, length, I2Cx_TIMEOUT))
+    if (HAL_I2C_Master_Receive(&hi2c1, addr << 1, data, length, I2Cx_TIMEOUT))
         return false;
 
     return true;
@@ -170,6 +174,71 @@ void HMC_ReadMagRaw(int16_t *dest)
     dest[2] = ((int16_t)rawData[2] << 8) | rawData[3];
 }
 
+void MS_ReadPROM(uint16_t *dest)
+{
+    for (int i = 0; i < 8; i++)
+    {
+        uint8_t temp[2] = {0};
+        SENSOR_WriteByte(MS5611_ADDRESS, MS5611_CMD_READ_PROM | i << 1);
+        HAL_Delay(5);
+        SENSOR_ReadBytes(MS5611_ADDRESS, 2, temp);
+        dest[i] = (uint16_t)((temp[0] << 8) | temp[1]);
+    }
+}
+
+uint32_t MS_ReadPressureRaw(void)
+{
+    uint8_t rawData[3];
+    SENSOR_WriteByte(MS5611_ADDRESS, MS5611_CMD_CONV_D1 + MS5611_CMD_ADC_4096);
+    HAL_Delay(10);
+    SENSOR_WriteByte(MS5611_ADDRESS, MS5611_CMD_ADC_READ);
+    SENSOR_ReadBytes(MS5611_ADDRESS, 3, rawData);
+    return (uint32_t)(rawData[0] << 16 | rawData[1] << 8 | rawData[2]);
+}
+
+uint32_t MS_ReadTempRaw(void)
+{
+    uint8_t rawData[3];
+    SENSOR_WriteByte(MS5611_ADDRESS, MS5611_CMD_CONV_D2 + MS5611_CMD_ADC_4096);
+    HAL_Delay(10);
+    SENSOR_WriteByte(MS5611_ADDRESS, MS5611_CMD_ADC_READ);
+    SENSOR_ReadBytes(MS5611_ADDRESS, 3, rawData);
+    return (uint32_t)(rawData[0] << 16 | rawData[1] << 8 | rawData[2]);
+}
+
+uint32_t MS_ReadPressure(void)
+{
+    uint32_t D1 = MS_ReadPressureRaw();
+    uint32_t D2 = MS_ReadTempRaw();
+
+    int32_t dT = D2 - (uint32_t)msPROM[5] * 256;
+    int32_t TEMP = 2000 + ((int64_t)dT * msPROM[6]) / 8388608;
+
+    int64_t OFF = (int64_t)msPROM[2] * 65536 + (int64_t)msPROM[4] * dT / 128;
+    int64_t SENS = (int64_t)msPROM[1] * 32768 + (int64_t)msPROM[3] * dT / 256;
+
+    int64_t OFF2 = 0, SENS2 = 0;
+
+    if (TEMP < 2000)
+    {
+        int64_t t = (TEMP - 2000) * (TEMP - 2000);
+        OFF2 = 5 * t / 2;
+        SENS2 = 5 * t / 4;
+    }
+
+    if (TEMP < -1500)
+    {
+        int64_t t = (TEMP + 1500) * (TEMP + 1500);
+        OFF2 = OFF2 + 7 * t;
+        SENS2 = SENS2 + 11 * t / 2;
+    }
+
+    OFF = OFF - OFF2;
+    SENS = SENS - SENS2;
+
+    return (D1 * SENS / 2097152 - OFF) / 32768;
+}
+
 /**
  * @brief to test if mpu is connected
  * @return true mpu is connected
@@ -196,7 +265,7 @@ bool MPU_Connect(void)
  * @return true hmc is connected
  * @return false hmc is not connected
  */
-bool HMC_Connect()
+bool HMC_Connect(void)
 {
     uint8_t e, f, g;
     SENSOR_RegReadBytes(HMC5883L_ADDRESS, HMC5883L_IDA, 1, &e); // Read WHO_AM_I register A for HMC5883L
@@ -320,7 +389,7 @@ bool MPU_SelfTest(void) // Should return percent deviation from factory trim val
  * @return true pass self test
  * @return false fail self test
  */
-bool HMC_SelfTest()
+bool HMC_SelfTest(void)
 {
     int16_t selfTest[3] = {0, 0, 0};
     //  Perform self-test and calculate temperature compensation bias
@@ -385,9 +454,16 @@ bool MS_CheckCRC(uint16_t *n_prom)
     n_rem = (0x000F & (n_rem >> 12)); // // final 4-bit reminder is CRC code
     n_prom[7] = crc_read;             // restore the crc_read to its original place
 
-    //    return (n_rem ^ 0x00);
+    unsigned int crc_caculate = n_rem ^ 0x00;
+    crc_read &= 0x000F;
+    printf("Checksum = %d, should be %d\n", crc_caculate, crc_read);
+    if (crc_caculate != crc_read)
+    {
+        printf("MS fail CRC check!\n");
+        return false;
+    }
 
-    printf("Checksum = %d, should be %d\n", n_rem, crc_read);
+    printf("MS pass CRC check!\n");
     return true;
 }
 
@@ -548,7 +624,7 @@ void MPU_Calibrate(float *gyrobias, float *accbias)
 
     printf("MPU6050 bias\n");
     printf(" x\t  y\t  z  \n");
-    printf("%f\t%f\t%f\t mg\n", accelBias.array[0],accelBias.array[1],accelBias.array[2]);
+    printf("%f\t%f\t%f\t mg\n", accelBias.array[0], accelBias.array[1], accelBias.array[2]);
     printf("%f\t%f\t%f\t °/s\n", gyroBias.array[0], gyroBias.array[1], gyroBias.array[2]);
 }
 
@@ -665,19 +741,16 @@ void HMC_Init(void)
  */
 void MS_Init(void)
 {
-    uint16_t c[8];
-
     SENSOR_WriteByte(MS5611_ADDRESS, MS5611_CMD_RESET);
     HAL_Delay(100);
 
-    for (int i = 0; i < 8; i++)
-    {
-        uint8_t temp[2] = {0};
-        SENSOR_WriteByte(MS5611_ADDRESS, MS5611_CMD_READ_PROM | i << 1);
-		HAL_Delay(5);
-        SENSOR_ReadBytes(MS5611_ADDRESS, 2, temp);
-        c[i] = (uint16_t)((temp[0] << 8) | temp[1]);
-    }
+    MS_ReadPROM(msPROM);
+    MS_CheckCRC(msPROM); // calculate checksum to ensure integrity of MS5611 calibration data
 
-    MS_CheckCRC(c); // calculate checksum to ensure integrity of MS5611 calibration data
+    int64_t pressure = 0;
+    for (int i = 0; i < 20; i++)
+    {
+        pressure += MS_ReadPressure();
+    }
+    initialPressure = (float)pressure / 20.f;
 }

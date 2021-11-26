@@ -8,10 +8,14 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
+#include "main.h"
 #include "tim.h"
 
 /* Defines -------------------------------------------------------------------*/
 #define PWM_MAX 2000
+#define PWM_MIN 1000
+#define PWM_LIMIT(_PWM_) \
+    _PWM_ < PWM_MIN ? PWM_MIN : (_PWM_ > PWM_MAX ? PWM_MAX : _PWM_)
 
 /**
  * @brief Motor Initialize: config high level value to 1ms
@@ -33,13 +37,18 @@ void MOTOR_Init(void)
  */
 void MOTOR_Set(uint16_t M1_PWM, uint16_t M2_PWM, uint16_t M3_PWM, uint16_t M4_PWM)
 {
-    if (M1_PWM > PWM_MAX) M1_PWM = PWM_MAX;
-    if (M2_PWM > PWM_MAX) M2_PWM = PWM_MAX;
-    if (M3_PWM > PWM_MAX) M3_PWM = PWM_MAX;
-    if (M4_PWM > PWM_MAX) M4_PWM = PWM_MAX;
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, PWM_LIMIT(M1_PWM));
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, PWM_LIMIT(M2_PWM));
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, PWM_LIMIT(M3_PWM));
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, PWM_LIMIT(M4_PWM));
+}
 
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, M1_PWM);
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, M2_PWM);
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, M3_PWM);
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, M4_PWM);
+/**
+ * @brief Set motor rotaton rate by PID control
+ * @param control control value caulated by PID controller
+ */
+void MOTOR_Control(control_t *control)
+{
+    float a = control->altitude, p = control->pitch, r = control->roll, y = control->yaw;
+    MOTOR_Set(a - p + r + y, a - p - r - y, a + p - r + y, a + p + r - y);
 }

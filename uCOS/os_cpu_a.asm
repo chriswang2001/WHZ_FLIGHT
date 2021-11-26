@@ -49,7 +49,7 @@
     EXPORT  OS_CPU_SR_Restore
     EXPORT  OSCtxSw
     EXPORT  OSIntCtxSw
-    EXPORT  OS_CPU_PendSVHandler
+    EXPORT  PendSV_Handler
 
     IF {FPU} != "SoftVFP"
     EXPORT  OS_CPU_FP_Reg_Push
@@ -326,7 +326,7 @@ OSIntCtxSw
 ;                  CPSIE i
 ;********************************************************************************************************
 
-OS_CPU_PendSVHandler
+PendSV_Handler
     CPSID   I                                                   ; Cortex-M7 errata notice. See Note #5
     MOV32   R2, OS_KA_BASEPRI_Boundary                          ; Set BASEPRI priority level required for exception preemption
     LDR     R1, [R2]

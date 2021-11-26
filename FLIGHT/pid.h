@@ -15,6 +15,12 @@
 extern "C" {
 #endif
 
+#include "main.h"
+
+#define MAX_ANGLE 35
+
+void PID_Init(void);
+
 #ifdef __cplusplus
 }
 #endif

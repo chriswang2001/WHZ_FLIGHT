@@ -38,3 +38,10 @@
 .\objects\i2c.o: ..\LIB\Inc\stm32f4xx_hal_tim_ex.h
 .\objects\i2c.o: ..\LIB\Inc\stm32f4xx_hal_uart.h
 .\objects\i2c.o: ..\DRIVER\sys.h
+.\objects\i2c.o: ..\uCOS\ucos_ii.h
+.\objects\i2c.o: ..\uCOS\app_cfg.h
+.\objects\i2c.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
+.\objects\i2c.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+.\objects\i2c.o: ..\uCOS\os_cfg.h
+.\objects\i2c.o: ..\uCOS\os_cpu.h
+.\objects\i2c.o: ..\uCOS\os_trace.h

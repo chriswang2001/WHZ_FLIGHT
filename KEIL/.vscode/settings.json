@@ -86,6 +86,7 @@
     // Add `\\` in doxygen command suggestion for better readbility (need to enable commandSuggestion)
     "doxdocgen.generic.commandSuggestionAddPrefix": false,
     "files.associations": {
-        "main.h": "c"
+        "main.h": "c",
+        "stm32f4xx.h": "c"
     }
 }

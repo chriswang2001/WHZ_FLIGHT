@@ -1,5 +1,4 @@
 .\objects\motor.o: ..\DRIVER\motor.c
-.\objects\motor.o: ..\HAL\tim.h
 .\objects\motor.o: ..\APP\main.h
 .\objects\motor.o: ..\LIB\Inc\stm32f4xx_hal.h
 .\objects\motor.o: ..\HAL\stm32f4xx_hal_conf.h
@@ -38,3 +37,11 @@
 .\objects\motor.o: ..\LIB\Inc\stm32f4xx_hal_tim_ex.h
 .\objects\motor.o: ..\LIB\Inc\stm32f4xx_hal_uart.h
 .\objects\motor.o: ..\DRIVER\sys.h
+.\objects\motor.o: ..\uCOS\ucos_ii.h
+.\objects\motor.o: ..\uCOS\app_cfg.h
+.\objects\motor.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
+.\objects\motor.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+.\objects\motor.o: ..\uCOS\os_cfg.h
+.\objects\motor.o: ..\uCOS\os_cpu.h
+.\objects\motor.o: ..\uCOS\os_trace.h
+.\objects\motor.o: ..\HAL\tim.h

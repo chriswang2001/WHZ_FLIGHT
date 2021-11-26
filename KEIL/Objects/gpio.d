@@ -38,3 +38,10 @@
 .\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_tim_ex.h
 .\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_uart.h
 .\objects\gpio.o: ..\DRIVER\sys.h
+.\objects\gpio.o: ..\uCOS\ucos_ii.h
+.\objects\gpio.o: ..\uCOS\app_cfg.h
+.\objects\gpio.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
+.\objects\gpio.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+.\objects\gpio.o: ..\uCOS\os_cfg.h
+.\objects\gpio.o: ..\uCOS\os_cpu.h
+.\objects\gpio.o: ..\uCOS\os_trace.h

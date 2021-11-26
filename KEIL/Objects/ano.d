@@ -1,4 +1,9 @@
 .\objects\ano.o: ..\DRIVER\ano.c
+.\objects\ano.o: ..\APP\main.h
+.\objects\ano.o: ..\LIB\Inc\stm32f4xx_hal.h
+.\objects\ano.o: ..\HAL\stm32f4xx_hal_conf.h
+.\objects\ano.o: ..\LIB\Inc\stm32f4xx_hal_rcc.h
+.\objects\ano.o: ..\LIB\Inc\stm32f4xx_hal_def.h
 .\objects\ano.o: ..\LIB\Inc\stm32f4xx.h
 .\objects\ano.o: ..\LIB\Inc\stm32f401xe.h
 .\objects\ano.o: ..\LIB\Inc\core_cm4.h
@@ -9,10 +14,6 @@
 .\objects\ano.o: ..\LIB\Inc\mpu_armv7.h
 .\objects\ano.o: ..\LIB\Inc\system_stm32f4xx.h
 .\objects\ano.o: ..\LIB\Inc\stm32f4xx_hal.h
-.\objects\ano.o: ..\HAL\stm32f4xx_hal_conf.h
-.\objects\ano.o: ..\LIB\Inc\stm32f4xx_hal_rcc.h
-.\objects\ano.o: ..\LIB\Inc\stm32f4xx_hal_def.h
-.\objects\ano.o: ..\LIB\Inc\stm32f4xx.h
 .\objects\ano.o: ..\LIB\Inc\Legacy/stm32_hal_legacy.h
 .\objects\ano.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
 .\objects\ano.o: ..\LIB\Inc\stm32f4xx_hal_rcc_ex.h
@@ -35,7 +36,13 @@
 .\objects\ano.o: ..\LIB\Inc\stm32f4xx_hal_tim.h
 .\objects\ano.o: ..\LIB\Inc\stm32f4xx_hal_tim_ex.h
 .\objects\ano.o: ..\LIB\Inc\stm32f4xx_hal_uart.h
-.\objects\ano.o: ..\HAL\usart.h
-.\objects\ano.o: ..\APP\main.h
 .\objects\ano.o: ..\DRIVER\sys.h
+.\objects\ano.o: ..\uCOS\ucos_ii.h
+.\objects\ano.o: ..\uCOS\app_cfg.h
+.\objects\ano.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
+.\objects\ano.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+.\objects\ano.o: ..\uCOS\os_cfg.h
+.\objects\ano.o: ..\uCOS\os_cpu.h
+.\objects\ano.o: ..\uCOS\os_trace.h
+.\objects\ano.o: ..\HAL\usart.h
 .\objects\ano.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h

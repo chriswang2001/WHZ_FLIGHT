@@ -44,4 +44,10 @@
 .\objects\sensor.o: ..\HAL\i2c.h
 .\objects\sensor.o: ..\APP\main.h
 .\objects\sensor.o: ..\DRIVER\sys.h
+.\objects\sensor.o: ..\uCOS\ucos_ii.h
+.\objects\sensor.o: ..\uCOS\app_cfg.h
+.\objects\sensor.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
 .\objects\sensor.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+.\objects\sensor.o: ..\uCOS\os_cfg.h
+.\objects\sensor.o: ..\uCOS\os_cpu.h
+.\objects\sensor.o: ..\uCOS\os_trace.h

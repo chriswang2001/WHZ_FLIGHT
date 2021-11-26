@@ -31,6 +31,8 @@ void MS_Init(void);
 void MPU_ReadAccelRaw(int16_t *dest);
 void MPU_ReadGyroRaw(int16_t *dest);
 void HMC_ReadMagRaw(int16_t *dest);
+uint32_t MS_ReadPressure(void);
+
 /* Exported Variables --------------------------------------------------------*/
 
 /* Defines -------------------------------------------------------------------*/
@@ -204,6 +206,11 @@ enum Mscale
 #define MS5611_CMD_CONV_D1 0x40
 #define MS5611_CMD_CONV_D2 0x50
 #define MS5611_CMD_READ_PROM 0xA0
+#define MS5611_CMD_ADC_256 0x00  // ADC OSR=256
+#define MS5611_CMD_ADC_512 0x02  // ADC OSR=512
+#define MS5611_CMD_ADC_1024 0x04 // ADC OSR=1024
+#define MS5611_CMD_ADC_2048 0x06 // ADC OSR=2048
+#define MS5611_CMD_ADC_4096 0x08 // ADC OSR=4096
 
 #ifdef __cplusplus
 }

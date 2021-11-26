@@ -37,3 +37,10 @@
 .\objects\stm32f4xx_hal_msp.o: ..\LIB\Inc\stm32f4xx_hal_tim_ex.h
 .\objects\stm32f4xx_hal_msp.o: ..\LIB\Inc\stm32f4xx_hal_uart.h
 .\objects\stm32f4xx_hal_msp.o: ..\DRIVER\sys.h
+.\objects\stm32f4xx_hal_msp.o: ..\uCOS\ucos_ii.h
+.\objects\stm32f4xx_hal_msp.o: ..\uCOS\app_cfg.h
+.\objects\stm32f4xx_hal_msp.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
+.\objects\stm32f4xx_hal_msp.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+.\objects\stm32f4xx_hal_msp.o: ..\uCOS\os_cfg.h
+.\objects\stm32f4xx_hal_msp.o: ..\uCOS\os_cpu.h
+.\objects\stm32f4xx_hal_msp.o: ..\uCOS\os_trace.h

@@ -14,6 +14,7 @@
 #include "gpio.h"
 #include "i2c.h"
 #include "motor.h"
+#include "pid.h"
 #include "remote.h"
 #include "sensor.h"
 #include "tim.h"
@@ -47,6 +48,7 @@ void SYS_Init(void)
     MOTOR_Init();
     REMOTE_Init();
     SENSOR_Init();
+    PID_Init();
 
     // Todo 开串口 ano_Init?
     __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);

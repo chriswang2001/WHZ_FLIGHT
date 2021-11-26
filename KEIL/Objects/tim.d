@@ -38,3 +38,10 @@
 .\objects\tim.o: ..\LIB\Inc\stm32f4xx_hal_tim_ex.h
 .\objects\tim.o: ..\LIB\Inc\stm32f4xx_hal_uart.h
 .\objects\tim.o: ..\DRIVER\sys.h
+.\objects\tim.o: ..\uCOS\ucos_ii.h
+.\objects\tim.o: ..\uCOS\app_cfg.h
+.\objects\tim.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
+.\objects\tim.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+.\objects\tim.o: ..\uCOS\os_cfg.h
+.\objects\tim.o: ..\uCOS\os_cpu.h
+.\objects\tim.o: ..\uCOS\os_trace.h
