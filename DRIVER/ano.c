@@ -9,7 +9,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "stm32f4xx.h"
 #include "usart.h"
 #include <stdbool.h>
 
@@ -25,7 +24,7 @@
  * @return true when data is correct
  * @return false when data is incorrect
  */
-static bool ano_check(uint8_t *data)
+static inline bool ano_check(uint8_t *data)
 {
     uint8_t sum_check = 0;
     uint8_t add_check = 0;
@@ -48,7 +47,7 @@ static bool ano_check(uint8_t *data)
  * @brief Add sum_check and add_check in data frame
  * @param data the pointer of data to send
  */
-static void ano_addcheck(uint8_t *data)
+static inline void ano_addcheck(uint8_t *data)
 {
     uint8_t sum_check = 0;
     uint8_t add_check = 0;
@@ -73,26 +72,26 @@ static void ano_addcheck(uint8_t *data)
  * @param ac ac get in data frame
  * @return uint8_t the length of data frame
  */
-uint8_t ANO_Send_Verification(uint8_t *data, uint8_t id, uint8_t sc, uint8_t ac)
-{
-    uint8_t cnt = 0;
+// static inline void ANO_Send_Verification(uint8_t id, uint8_t sc, uint8_t ac)
+// {
+//     uint8_t cnt = 0;
 
-    data[cnt++] = 0xAA;
-    data[cnt++] = 0xAF;
-    data[cnt++] = 0x00;
-    data[cnt++] = 3;
+//     data[cnt++] = 0xAA;
+//     data[cnt++] = 0xAF;
+//     data[cnt++] = 0x00;
+//     data[cnt++] = 3;
 
-    data[cnt++] = id;
-    data[cnt++] = sc;
-    data[cnt++] = ac;
+//     data[cnt++] = id;
+//     data[cnt++] = sc;
+//     data[cnt++] = ac;
 
-    ano_addcheck(data);
+//     ano_addcheck(data);
 
-    return cnt + 2;
-}
+//     return cnt + 2;
+// }
 
 /**
- * @brief  Send Sensor data accelerometer and gyroscope
+ * @brief  Send Sensor data including accelerometer and gyroscope
  * @param data data to send
  * @retval the length of data
  */
@@ -131,7 +130,7 @@ uint8_t ANO_Send_Sensor(uint8_t *data, int16_t a_x, int16_t a_y, int16_t a_z, in
 }
 
 /**
- * @brief  Send Sensor data magnetometer altitude temperature
+ * @brief  Send Sensor data magnetometer altitude and temperature
  * @param data data to send
  * @retval the length of data
  */
@@ -269,42 +268,11 @@ uint8_t ANO_Send_Altitude(uint8_t *data, int32_t fusion, int32_t addition)
 }
 
 /**
- * @brief  Send the target angle sent by remote control
- * @param data data to send
- * @retval the length of data
- */
-uint8_t ANO_Send_Target(uint8_t *data, uint16_t roll, uint16_t pitch, uint16_t yaw)
-{
-    uint8_t cnt = 0;
-
-    data[cnt++] = 0xAA;
-    data[cnt++] = 0xAF;
-    data[cnt++] = 0x0A;
-    data[cnt++] = 6;
-
-    uint16_t temp;
-    temp = (int)roll * 100;
-    data[cnt++] = BYTE0(temp);
-    data[cnt++] = BYTE1(temp);
-    temp = (int)pitch * 100;
-    data[cnt++] = BYTE0(temp);
-    data[cnt++] = BYTE1(temp);
-    temp = (int)yaw * 100;
-    data[cnt++] = BYTE0(temp);
-    data[cnt++] = BYTE1(temp);
-
-    ano_addcheck(data);
-
-    // some spaces are reseved
-    return cnt + 2;
-}
-
-/**
  * @brief  Send tha battery's voltage and current
  * @param data data to send
  * @retval the length of data
  */
-uint8_t ANO_Send_Battery(uint8_t *data, float voltage, float current)
+uint8_t ANO_Send_Battery(uint8_t *data, float voltage, int16_t usage)
 {
     uint8_t cnt = 0;
 
@@ -317,7 +285,7 @@ uint8_t ANO_Send_Battery(uint8_t *data, float voltage, float current)
     temp = (int)voltage * 100;
     data[cnt++] = BYTE0(temp);
     data[cnt++] = BYTE1(temp);
-    temp = (int)current * 100;
+    temp = usage;
     data[cnt++] = BYTE0(temp);
     data[cnt++] = BYTE1(temp);
 
@@ -382,7 +350,7 @@ uint8_t ANO_Send_PWM(uint8_t *data, uint16_t p1, uint16_t p2, uint16_t p3, uint1
 }
 
 /**
- * @brief  the desired angle somputed by PID
+ * @brief  the control value computed by PID controller
  * @param data data to send
  * @retval the length of data
  */
@@ -416,6 +384,32 @@ uint8_t ANO_Send_Control(uint8_t *data, float roll, float pitch, uint16_t thrust
     //    HAL_UART_Transmit_DMA(&huart2, data, cnt + 2);
 
     return cnt + 6;
+}
+
+/**
+ * @brief  Send the target angle sent by remote control
+ * @param data data to send
+ * @retval the length of data
+ */
+uint8_t ANO_Send_Remote(uint8_t *data, int16_t *ch, uint8_t size)
+{
+    uint8_t cnt = 0;
+
+    data[cnt++] = 0xAA;
+    data[cnt++] = 0xAF;
+    data[cnt++] = 0x40;
+    data[cnt++] = 20;
+
+    for (int i = 0; i < size; i++)
+    {
+        data[cnt++] = BYTE0(ch[i]);
+        data[cnt++] = BYTE1(ch[i]);
+    }
+
+    ano_addcheck(data);
+
+    // some spaces are reseved
+    return 26;
 }
 
 /**

@@ -37,11 +37,6 @@
 .\objects\sensor.o: ..\LIB\Inc\stm32f4xx_hal_tim_ex.h
 .\objects\sensor.o: ..\LIB\Inc\stm32f4xx_hal_uart.h
 .\objects\sensor.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
-.\objects\sensor.o: ..\LIB\Inc\arm_math.h
-.\objects\sensor.o: ..\LIB\Inc\core_cm4.h
-.\objects\sensor.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
-.\objects\sensor.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\math.h
-.\objects\sensor.o: ..\HAL\i2c.h
 .\objects\sensor.o: ..\APP\main.h
 .\objects\sensor.o: ..\DRIVER\sys.h
 .\objects\sensor.o: ..\uCOS\ucos_ii.h
@@ -51,3 +46,8 @@
 .\objects\sensor.o: ..\uCOS\os_cfg.h
 .\objects\sensor.o: ..\uCOS\os_cpu.h
 .\objects\sensor.o: ..\uCOS\os_trace.h
+.\objects\sensor.o: ..\LIB\Inc\arm_math.h
+.\objects\sensor.o: ..\LIB\Inc\core_cm4.h
+.\objects\sensor.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+.\objects\sensor.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\math.h
+.\objects\sensor.o: ..\HAL\i2c.h

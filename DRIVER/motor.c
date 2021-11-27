@@ -17,6 +17,8 @@
 #define PWM_LIMIT(_PWM_) \
     _PWM_ < PWM_MIN ? PWM_MIN : (_PWM_ > PWM_MAX ? PWM_MAX : _PWM_)
 
+uint16_t mvalue[4];
+
 /**
  * @brief Motor Initialize: config high level value to 1ms
  */
@@ -50,5 +52,9 @@ void MOTOR_Set(uint16_t M1_PWM, uint16_t M2_PWM, uint16_t M3_PWM, uint16_t M4_PW
 void MOTOR_Control(control_t *control)
 {
     float a = control->altitude, p = control->pitch, r = control->roll, y = control->yaw;
-    MOTOR_Set(a - p + r + y, a - p - r - y, a + p - r + y, a + p + r - y);
+    mvalue[0] = a - p + r + y;
+    mvalue[1] = a - p - r - y;
+    mvalue[2] = a + p - r + y;
+    mvalue[3] = a + p + r - y;
+    MOTOR_Set(mvalue[0], mvalue[1], mvalue[2], mvalue[3]);
 }

@@ -18,7 +18,8 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
 #include <stdbool.h>
-
+#include "main.h"
+	
 /* Exported functions prototypes ---------------------------------------------*/
 void SENSOR_Task(void);
 void SENSOR_Init(void);
@@ -34,6 +35,7 @@ void HMC_ReadMagRaw(int16_t *dest);
 uint32_t MS_ReadPressure(void);
 
 /* Exported Variables --------------------------------------------------------*/
+extern FloatVector3 accel, gyro;
 
 /* Defines -------------------------------------------------------------------*/
 #define I2Cx_TIMEOUT 1000

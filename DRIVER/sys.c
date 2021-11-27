@@ -52,6 +52,8 @@ void SYS_Init(void)
 
     // Todo 开串口 ano_Init?
     __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
+
+    printf("System Initialize\n");
 }
 
 /**

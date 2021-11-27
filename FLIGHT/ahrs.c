@@ -10,6 +10,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "ahrs.h"
 #include "arm_math.h"
+#include "main.h"
 
 /* Definitions ---------------------------------------------------------------*/
 #define sampleFreq 100.0f // sample frequency in Hz
@@ -18,6 +19,7 @@
 /* Variables -----------------------------------------------------------------*/
 volatile float beta = betaDef;                             // 2 * proportional gain (Kp)
 volatile float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f; // quaternion of sensor frame relative to auxiliary frame
+EulerAngles attitude;
 
 /**
  * @brief Madgwick's AHRS algorithms

@@ -21,9 +21,9 @@ uint8_t Ascale = AFS_8G;
 uint8_t Mscale = MFS_130Ga;
 
 // scale resolutions per LSB for the sensors
-float aRes[4] = {2.f / 32768.f, 4.f / 32768.f, 8.f / 32768.f, 16.f / 32768.f};
-float gRes[4] = {250.f / 32768.f, 500.f / 32768.f, 1000.f / 32768.f, 2000.f / 32768.f};
-float mRes[8] = {1.f / 1.37f, 1.f / 1.09f, 1.f / 0.82f, 1.f / 0.66f, 1.f / 0.44f, 1.f / 0.39f, 1.f / 0.33f, 1.f / 0.23f};
+const float aRes[4] = {2.f / 32768.f, 4.f / 32768.f, 8.f / 32768.f, 16.f / 32768.f};
+const float gRes[4] = {250.f / 32768.f, 500.f / 32768.f, 1000.f / 32768.f, 2000.f / 32768.f};
+const float mRes[8] = {1.f / 1.37f, 1.f / 1.09f, 1.f / 0.82f, 1.f / 0.66f, 1.f / 0.44f, 1.f / 0.39f, 1.f / 0.33f, 1.f / 0.23f};
 
 FloatVector3 accel, gyro, mag;                                                    // Stores the real sensor value in g's, degrees per second, milliGauss
 FloatVector3 accelBias, gyroBias, magBias, magScale = {.array = {1.f, 1.f, 1.f}}; // Offser and scale calibration for sensor in g's, degrees per second, milliGauss

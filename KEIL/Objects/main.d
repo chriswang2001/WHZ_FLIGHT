@@ -44,3 +44,11 @@
 .\objects\main.o: ..\uCOS\os_cfg.h
 .\objects\main.o: ..\uCOS\os_cpu.h
 .\objects\main.o: ..\uCOS\os_trace.h
+.\objects\main.o: ..\HAL\adc.h
+.\objects\main.o: ..\FLIGHT\ahrs.h
+.\objects\main.o: ..\DRIVER\ano.h
+.\objects\main.o: ..\DRIVER\motor.h
+.\objects\main.o: ..\DRIVER\remote.h
+.\objects\main.o: ..\DRIVER\sensor.h
+.\objects\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\objects\main.o: ..\HAL\usart.h

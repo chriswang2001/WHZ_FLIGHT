@@ -18,9 +18,9 @@
 #define ARR_VALUE2 0xffffffff
 
 /* Variables -----------------------------------------------------------------*/
-bool rstate[CHANNEL_MAX];                          // caputure state 0:now is low level 1:now is high level
-uint8_t ucount[CHANNEL_MAX];                       // update count
-uint32_t rvalue[CHANNEL_MAX], pvalue[CHANNEL_MAX]; // caputre value and pre caputre value
+bool rstate[CHANNEL_MAX];                                   // caputure state 0:now is low level 1:now is high level
+uint8_t ucount[CHANNEL_MAX];                                // update count
+volatile uint32_t rvalue[CHANNEL_MAX], pvalue[CHANNEL_MAX]; // caputre value and pre caputre value
 
 /**
  * @brief Remote Controller Initialize

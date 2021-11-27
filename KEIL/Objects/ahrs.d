@@ -36,6 +36,15 @@
 .\objects\ahrs.o: ..\LIB\Inc\stm32f4xx_hal_tim.h
 .\objects\ahrs.o: ..\LIB\Inc\stm32f4xx_hal_tim_ex.h
 .\objects\ahrs.o: ..\LIB\Inc\stm32f4xx_hal_uart.h
+.\objects\ahrs.o: ..\APP\main.h
+.\objects\ahrs.o: ..\DRIVER\sys.h
+.\objects\ahrs.o: ..\uCOS\ucos_ii.h
+.\objects\ahrs.o: ..\uCOS\app_cfg.h
+.\objects\ahrs.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
+.\objects\ahrs.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+.\objects\ahrs.o: ..\uCOS\os_cfg.h
+.\objects\ahrs.o: ..\uCOS\os_cpu.h
+.\objects\ahrs.o: ..\uCOS\os_trace.h
 .\objects\ahrs.o: ..\LIB\Inc\arm_math.h
 .\objects\ahrs.o: ..\LIB\Inc\core_cm4.h
 .\objects\ahrs.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
