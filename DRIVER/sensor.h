@@ -16,10 +16,10 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
+#include "main.h"
 #include "stm32f4xx_hal.h"
 #include <stdbool.h>
-#include "main.h"
-	
+
 /* Exported functions prototypes ---------------------------------------------*/
 void SENSOR_Task(void);
 void SENSOR_Init(void);
@@ -36,6 +36,10 @@ uint32_t MS_ReadPressure(void);
 
 /* Exported Variables --------------------------------------------------------*/
 extern FloatVector3 accel, gyro;
+extern FloatVector3 accelBias, gyroBias, magBias, magScale;
+extern uint8_t Gscale, Ascale, Mscale;
+extern const float aRes[4], gRes[4], mRes[8];
+extern const float degreeToradian, radianTodegree;
 
 /* Defines -------------------------------------------------------------------*/
 #define I2Cx_TIMEOUT 1000

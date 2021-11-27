@@ -1,5 +1,10 @@
 .\objects\ahrs.o: ..\FLIGHT\ahrs.c
 .\objects\ahrs.o: ..\FLIGHT\ahrs.h
+.\objects\ahrs.o: ..\APP\main.h
+.\objects\ahrs.o: ..\LIB\Inc\stm32f4xx_hal.h
+.\objects\ahrs.o: ..\HAL\stm32f4xx_hal_conf.h
+.\objects\ahrs.o: ..\LIB\Inc\stm32f4xx_hal_rcc.h
+.\objects\ahrs.o: ..\LIB\Inc\stm32f4xx_hal_def.h
 .\objects\ahrs.o: ..\LIB\Inc\stm32f4xx.h
 .\objects\ahrs.o: ..\LIB\Inc\stm32f401xe.h
 .\objects\ahrs.o: ..\LIB\Inc\core_cm4.h
@@ -10,10 +15,6 @@
 .\objects\ahrs.o: ..\LIB\Inc\mpu_armv7.h
 .\objects\ahrs.o: ..\LIB\Inc\system_stm32f4xx.h
 .\objects\ahrs.o: ..\LIB\Inc\stm32f4xx_hal.h
-.\objects\ahrs.o: ..\HAL\stm32f4xx_hal_conf.h
-.\objects\ahrs.o: ..\LIB\Inc\stm32f4xx_hal_rcc.h
-.\objects\ahrs.o: ..\LIB\Inc\stm32f4xx_hal_def.h
-.\objects\ahrs.o: ..\LIB\Inc\stm32f4xx.h
 .\objects\ahrs.o: ..\LIB\Inc\Legacy/stm32_hal_legacy.h
 .\objects\ahrs.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
 .\objects\ahrs.o: ..\LIB\Inc\stm32f4xx_hal_rcc_ex.h
@@ -36,7 +37,6 @@
 .\objects\ahrs.o: ..\LIB\Inc\stm32f4xx_hal_tim.h
 .\objects\ahrs.o: ..\LIB\Inc\stm32f4xx_hal_tim_ex.h
 .\objects\ahrs.o: ..\LIB\Inc\stm32f4xx_hal_uart.h
-.\objects\ahrs.o: ..\APP\main.h
 .\objects\ahrs.o: ..\DRIVER\sys.h
 .\objects\ahrs.o: ..\uCOS\ucos_ii.h
 .\objects\ahrs.o: ..\uCOS\app_cfg.h
@@ -49,3 +49,5 @@
 .\objects\ahrs.o: ..\LIB\Inc\core_cm4.h
 .\objects\ahrs.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
 .\objects\ahrs.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\math.h
+.\objects\ahrs.o: ..\DRIVER\sensor.h
+.\objects\ahrs.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h

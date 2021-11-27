@@ -30,30 +30,8 @@ FloatVector3 accelBias, gyroBias, magBias, magScale = {.array = {1.f, 1.f, 1.f}}
 uint16_t msPROM[8];
 float altitude, initialPressure = 1.f;
 
-void SENSOR_Task(void)
-{
-    Int16Vector3 accelCount, gyroCount, magCount; // Stores the 16-bit signed accelerometer, gyro, magnetometer sensor output
-
-    MPU_ReadAccelRaw(accelCount.array); // Read the x/y/z adc values
-    for (int i = 0; i < 3; i++)
-    {
-        accel.array[i] = accelCount.array[i] * aRes[Ascale] - accelBias.array[i]; // Calculate the accleration value into actual g's
-    }
-
-    MPU_ReadGyroRaw(gyroCount.array); // Read the x/y/z adc values
-    for (int i = 0; i < 3; i++)
-    {
-        gyro.array[i] = gyroCount.array[i] * gRes[Gscale] - gyroBias.array[i]; // Calculate the gyro value into actual degrees per second
-    }
-
-    HMC_ReadMagRaw(magCount.array); // Read the x/y/z adc values
-    for (int i = 0; i < 3; i++)
-    {
-        mag.array[i] = magCount.array[i] * mRes[Mscale] * magScale.array[i] - magBias.array[i]; // Calculate the magnetometer values in milliGauss
-    }
-
-    altitude = 44330.0f * (1.0f - powf((float)MS_ReadPressure() / initialPressure, 0.1902949f));
-}
+const float degreeToradian = PI / 180.f;
+const float radianTodegree = 180.f / PI;
 
 /**
  * @brief sensor initialize including mpu hmc and ms
@@ -64,10 +42,10 @@ void SENSOR_Init(void)
         HAL_Delay(100);
     MPU_Init();
 
-    if (HMC_Connect())
-        HMC_Init();
+    // if (HMC_Connect())
+    //     HMC_Init();
 
-    MS_Init();
+    //    MS_Init();
 }
 
 /**

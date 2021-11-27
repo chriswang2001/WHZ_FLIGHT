@@ -16,9 +16,9 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f4xx.h"
 #include "main.h"
-	
+#include "stm32f4xx.h"
+
 /* Exported variable declerations --------------------------------------------*/
 extern EulerAngles attitude;
 
