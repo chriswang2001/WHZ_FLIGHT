@@ -21,7 +21,7 @@ extern "C" {
 #include <stdbool.h>
 
 /* Exported functions prototypes ---------------------------------------------*/
-void SENSOR_Task(void);
+void SENSOR_Update(void);
 void SENSOR_Init(void);
 
 void MPU_Init(void);
@@ -33,13 +33,16 @@ void MPU_ReadAccelRaw(int16_t *dest);
 void MPU_ReadGyroRaw(int16_t *dest);
 void HMC_ReadMagRaw(int16_t *dest);
 uint32_t MS_ReadPressure(void);
+bool MS_WriteCMD(uint8_t cmd);
+uint32_t MS_ReadADC(void);
 
 /* Exported Variables --------------------------------------------------------*/
-extern FloatVector3 accel, gyro;
+extern FloatVector3 accel, gyro, mag;
 extern FloatVector3 accelBias, gyroBias, magBias, magScale;
 extern uint8_t Gscale, Ascale, Mscale;
 extern const float aRes[4], gRes[4], mRes[8];
-extern const float degreeToradian, radianTodegree;
+extern const float DegreeToRadian, RadianToDegree, ADCToVoltage;
+extern float altitude, voltage;
 
 /* Defines -------------------------------------------------------------------*/
 #define I2Cx_TIMEOUT 1000

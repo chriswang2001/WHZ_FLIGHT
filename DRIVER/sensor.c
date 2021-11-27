@@ -9,6 +9,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "sensor.h"
+#include "adc.h"
+#include "ano.h"
 #include "arm_math.h"
 #include "i2c.h"
 #include <math.h>
@@ -28,10 +30,11 @@ const float mRes[8] = {1.f / 1.37f, 1.f / 1.09f, 1.f / 0.82f, 1.f / 0.66f, 1.f /
 FloatVector3 accel, gyro, mag;                                                    // Stores the real sensor value in g's, degrees per second, milliGauss
 FloatVector3 accelBias, gyroBias, magBias, magScale = {.array = {1.f, 1.f, 1.f}}; // Offser and scale calibration for sensor in g's, degrees per second, milliGauss
 uint16_t msPROM[8];
-float altitude, initialPressure = 1.f;
+float altitude, voltage, pressure, initialPressure = 1.f;
 
-const float degreeToradian = PI / 180.f;
-const float radianTodegree = 180.f / PI;
+const float DegreeToRadian = PI / 180.f;
+const float RadianToDegree = 180.f / PI;
+const float ADCToVoltage = 3.3f / 4096.f;
 
 /**
  * @brief sensor initialize including mpu hmc and ms
@@ -42,10 +45,94 @@ void SENSOR_Init(void)
         HAL_Delay(100);
     MPU_Init();
 
-    // if (HMC_Connect())
-    //     HMC_Init();
+    if (HMC_Connect())
+        HMC_Init();
 
-    //    MS_Init();
+    MS_Init();
+}
+
+inline void SENSOR_Update(void)
+{
+    Int16Vector3 accelCount, gyroCount, magCount; // Stores the 16-bit signed accelerometer, gyro, magnetometer sensor output
+
+    MPU_ReadAccelRaw(accelCount.array); // Read the x/y/z adc values
+    for (int i = 0; i < 3; i++)
+    {
+        accel.array[i] = accelCount.array[i] * aRes[Ascale] - accelBias.array[i]; // Calculate the accleration value into actual g's
+    }
+
+    MPU_ReadGyroRaw(gyroCount.array); // Read the x/y/z adc values
+    for (int i = 0; i < 3; i++)
+    {
+        gyro.array[i] = gyroCount.array[i] * gRes[Gscale] - gyroBias.array[i]; // Calculate the gyro value into actual degrees per second
+    }
+
+    HMC_ReadMagRaw(magCount.array); // Read the x/y/z adc values
+    for (int i = 0; i < 3; i++)
+    {
+        mag.array[i] = magCount.array[i] * mRes[Mscale] * magScale.array[i] - magBias.array[i]; // Calculate the magnetometer values in milliGauss
+    }
+
+    pressure = MS_ReadPressure();
+    if (pressure != 0)
+        altitude = 44330.0f * (1.0f - powf((float)pressure / initialPressure, 0.1902949f));
+
+    voltage = HAL_ADC_GetValue(&hadc1) * ADCToVoltage;
+    HAL_ADC_Start(&hadc1);
+    if (voltage < 11.1f && voltage > 9.f)
+    {
+        char string[] = "low voltage, please return to base";
+        ANO_Send_String(string, sizeof(string), RED);
+    }
+}
+
+uint32_t MS_ReadPressure(void)
+{
+    static uint8_t state = 0;
+
+    uint32_t D1, D2;
+    switch (state)
+    {
+    case 0:
+        MS_WriteCMD(MS5611_CMD_CONV_D1 + MS5611_CMD_ADC_2048);
+        return 0;
+    case 1:
+        D1 = MS_ReadADC();
+        return 0;
+    case 2:
+        MS_WriteCMD(MS5611_CMD_CONV_D2 + MS5611_CMD_ADC_2048);
+        return 0;
+    case 3:
+        D2 = MS_ReadADC();
+        break;
+    }
+
+    int32_t dT = D2 - (uint32_t)msPROM[5] * 256;
+    int32_t TEMP = 2000 + ((int64_t)dT * msPROM[6]) / 8388608;
+
+    int64_t OFF = (int64_t)msPROM[2] * 65536 + (int64_t)msPROM[4] * dT / 128;
+    int64_t SENS = (int64_t)msPROM[1] * 32768 + (int64_t)msPROM[3] * dT / 256;
+
+    int64_t OFF2 = 0, SENS2 = 0;
+
+    if (TEMP < 2000)
+    {
+        int64_t t = (TEMP - 2000) * (TEMP - 2000);
+        OFF2 = 5 * t / 2;
+        SENS2 = 5 * t / 4;
+    }
+
+    if (TEMP < -1500)
+    {
+        int64_t t = (TEMP + 1500) * (TEMP + 1500);
+        OFF2 = OFF2 + 7 * t;
+        SENS2 = SENS2 + 11 * t / 2;
+    }
+
+    OFF = OFF - OFF2;
+    SENS = SENS - SENS2;
+
+    return (D1 * SENS / 2097152 - OFF) / 32768;
 }
 
 /**
@@ -164,57 +251,18 @@ void MS_ReadPROM(uint16_t *dest)
     }
 }
 
-uint32_t MS_ReadPressureRaw(void)
+bool MS_WriteCMD(uint8_t cmd)
+{
+    return SENSOR_WriteByte(MS5611_ADDRESS, cmd);
+}
+
+uint32_t MS_ReadADC(void)
 {
     uint8_t rawData[3];
-    SENSOR_WriteByte(MS5611_ADDRESS, MS5611_CMD_CONV_D1 + MS5611_CMD_ADC_4096);
-    HAL_Delay(10);
+
     SENSOR_WriteByte(MS5611_ADDRESS, MS5611_CMD_ADC_READ);
     SENSOR_ReadBytes(MS5611_ADDRESS, 3, rawData);
     return (uint32_t)(rawData[0] << 16 | rawData[1] << 8 | rawData[2]);
-}
-
-uint32_t MS_ReadTempRaw(void)
-{
-    uint8_t rawData[3];
-    SENSOR_WriteByte(MS5611_ADDRESS, MS5611_CMD_CONV_D2 + MS5611_CMD_ADC_4096);
-    HAL_Delay(10);
-    SENSOR_WriteByte(MS5611_ADDRESS, MS5611_CMD_ADC_READ);
-    SENSOR_ReadBytes(MS5611_ADDRESS, 3, rawData);
-    return (uint32_t)(rawData[0] << 16 | rawData[1] << 8 | rawData[2]);
-}
-
-uint32_t MS_ReadPressure(void)
-{
-    uint32_t D1 = MS_ReadPressureRaw();
-    uint32_t D2 = MS_ReadTempRaw();
-
-    int32_t dT = D2 - (uint32_t)msPROM[5] * 256;
-    int32_t TEMP = 2000 + ((int64_t)dT * msPROM[6]) / 8388608;
-
-    int64_t OFF = (int64_t)msPROM[2] * 65536 + (int64_t)msPROM[4] * dT / 128;
-    int64_t SENS = (int64_t)msPROM[1] * 32768 + (int64_t)msPROM[3] * dT / 256;
-
-    int64_t OFF2 = 0, SENS2 = 0;
-
-    if (TEMP < 2000)
-    {
-        int64_t t = (TEMP - 2000) * (TEMP - 2000);
-        OFF2 = 5 * t / 2;
-        SENS2 = 5 * t / 4;
-    }
-
-    if (TEMP < -1500)
-    {
-        int64_t t = (TEMP + 1500) * (TEMP + 1500);
-        OFF2 = OFF2 + 7 * t;
-        SENS2 = SENS2 + 11 * t / 2;
-    }
-
-    OFF = OFF - OFF2;
-    SENS = SENS - SENS2;
-
-    return (D1 * SENS / 2097152 - OFF) / 32768;
 }
 
 /**
@@ -530,70 +578,10 @@ void MPU_Calibrate(float *gyrobias, float *accbias)
         accel_bias[2] += (int32_t)accelsensitivity;
     }
 
-    // Construct the gyro biases for push to the hardware gyro bias registers, which are reset to zero upon device startup
-    data[0] = (-gyro_bias[0] / 4 >> 8) & 0xFF; // Divide by 4 to get 32.9 LSB per deg/s to conform to expected bias input format
-    data[1] = (-gyro_bias[0] / 4) & 0xFF;      // Biases are additive, so change sign on calculated average gyro biases
-    data[2] = (-gyro_bias[1] / 4 >> 8) & 0xFF;
-    data[3] = (-gyro_bias[1] / 4) & 0xFF;
-    data[4] = (-gyro_bias[2] / 4 >> 8) & 0xFF;
-    data[5] = (-gyro_bias[2] / 4) & 0xFF;
-
-    // Push gyro biases to hardware registers
-    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_XG_OFFS_USRH, data[0]); // might not be supported in MPU6050
-    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_XG_OFFS_USRL, data[1]);
-    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_YG_OFFS_USRH, data[2]);
-    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_YG_OFFS_USRL, data[3]);
-    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_ZG_OFFS_USRH, data[4]);
-    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_ZG_OFFS_USRL, data[5]);
-
-    gyrobias[0] = (float)gyro_bias[0] / (float)gyrosensitivity; // construct gyro bias in deg/s for later manual subtraction
+    // construct gyro bias in deg/s for later manual subtraction
+    gyrobias[0] = (float)gyro_bias[0] / (float)gyrosensitivity;
     gyrobias[1] = (float)gyro_bias[1] / (float)gyrosensitivity;
     gyrobias[2] = (float)gyro_bias[2] / (float)gyrosensitivity;
-
-    // Construct the accelerometer biases for push to the hardware accelerometer bias registers. These registers contain
-    // factory trim values which must be added to the calculated accelerometer biases; on boot up these registers will hold
-    // non-zero values. In addition, bit 0 of the lower byte must be preserved since it is used for temperature
-    // compensation calculations. Accelerometer bias registers expect bias input as 2048 LSB per g, so that
-    // the accelerometer biases calculated above must be divided by 8.
-
-    int32_t accel_bias_reg[3] = {0, 0, 0};                                  // A place to hold the factory accelerometer trim biases
-    SENSOR_RegReadBytes(MPU6050_ADDRESS, MPU6050_XA_OFFSET_H, 2, &data[0]); // Read factory accelerometer trim values
-    accel_bias_reg[0] = (int16_t)((int16_t)data[0] << 8) | data[1];
-    SENSOR_RegReadBytes(MPU6050_ADDRESS, MPU6050_YA_OFFSET_H, 2, &data[0]);
-    accel_bias_reg[1] = (int16_t)((int16_t)data[0] << 8) | data[1];
-    SENSOR_RegReadBytes(MPU6050_ADDRESS, MPU6050_ZA_OFFSET_H, 2, &data[0]);
-    accel_bias_reg[2] = (int16_t)((int16_t)data[0] << 8) | data[1];
-
-    uint32_t mask = 1uL;             // Define mask for temperature compensation bit 0 of lower byte of accelerometer bias registers
-    uint8_t mask_bit[3] = {0, 0, 0}; // Define array to hold mask bit for each accelerometer bias axis
-
-    for (ii = 0; ii < 3; ii++)
-    {
-        if (accel_bias_reg[ii] & mask) mask_bit[ii] = 0x01; // If temperature compensation bit is set, record that fact in mask_bit
-    }
-
-    // Construct total accelerometer bias, including calculated average accelerometer bias from above
-    accel_bias_reg[0] -= (accel_bias[0] / 8); // Subtract calculated averaged accelerometer bias scaled to 2048 LSB/g (16 g full scale)
-    accel_bias_reg[1] -= (accel_bias[1] / 8);
-    accel_bias_reg[2] -= (accel_bias[2] / 8);
-
-    data[0] = (accel_bias_reg[0] >> 8) & 0xFF;
-    data[1] = (accel_bias_reg[0]) & 0xFF;
-    data[1] = data[1] | mask_bit[0]; // preserve temperature compensation bit when writing back to accelerometer bias registers
-    data[2] = (accel_bias_reg[1] >> 8) & 0xFF;
-    data[3] = (accel_bias_reg[1]) & 0xFF;
-    data[3] = data[3] | mask_bit[1]; // preserve temperature compensation bit when writing back to accelerometer bias registers
-    data[4] = (accel_bias_reg[2] >> 8) & 0xFF;
-    data[5] = (accel_bias_reg[2]) & 0xFF;
-    data[5] = data[5] | mask_bit[2]; // preserve temperature compensation bit when writing back to accelerometer bias registers
-
-    // Push accelerometer biases to hardware registers
-    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_XA_OFFSET_H, data[0]); // might not be supported in MPU6050
-    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_XA_OFFSET_L_TC, data[1]);
-    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_YA_OFFSET_H, data[2]);
-    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_YA_OFFSET_L_TC, data[3]);
-    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_ZA_OFFSET_H, data[4]);
-    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_ZA_OFFSET_L_TC, data[5]);
 
     // Output scaled accelerometer biases for manual subtraction in the main program
     accbias[0] = (float)accel_bias[0] / (float)accelsensitivity;
@@ -726,9 +714,10 @@ void MS_Init(void)
     MS_CheckCRC(msPROM); // calculate checksum to ensure integrity of MS5611 calibration data
 
     int64_t pressure = 0;
-    for (int i = 0; i < 20; i++)
+    for (int i = 0; i < 100; i++)
     {
         pressure += MS_ReadPressure();
+        HAL_Delay(5);
     }
-    initialPressure = (float)pressure / 20.f;
+    initialPressure = (float)pressure / 25.f;
 }

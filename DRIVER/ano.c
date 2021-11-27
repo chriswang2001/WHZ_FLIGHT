@@ -18,6 +18,8 @@
 #define BYTE2(dwTemp) (*((char *)(&dwTemp) + 2))
 #define BYTE3(dwTemp) (*((char *)(&dwTemp) + 3))
 
+uint8_t data[100];
+
 /**
  * @brief check sum_check and add_check
  * @param data pointer of received data
@@ -272,7 +274,7 @@ uint8_t ANO_Send_Altitude(uint8_t *data, int32_t fusion, int32_t addition)
  * @param data data to send
  * @retval the length of data
  */
-uint8_t ANO_Send_Battery(uint8_t *data, float voltage, int16_t usage)
+uint8_t ANO_Send_Battery(uint8_t *data, float voltage, float current)
 {
     uint8_t cnt = 0;
 
@@ -285,7 +287,7 @@ uint8_t ANO_Send_Battery(uint8_t *data, float voltage, int16_t usage)
     temp = (int)voltage * 100;
     data[cnt++] = BYTE0(temp);
     data[cnt++] = BYTE1(temp);
-    temp = usage;
+    temp = (int)current * 100;
     data[cnt++] = BYTE0(temp);
     data[cnt++] = BYTE1(temp);
 
@@ -299,7 +301,7 @@ uint8_t ANO_Send_Battery(uint8_t *data, float voltage, int16_t usage)
  * @param data data to send
  * @retval the length of data
  */
-uint8_t ANO_Send_String(uint8_t *data, char *string, size_t size, uint8_t color)
+void ANO_Send_String(char *string, size_t size, uint8_t color)
 {
     uint8_t cnt = 0;
 
@@ -315,7 +317,7 @@ uint8_t ANO_Send_String(uint8_t *data, char *string, size_t size, uint8_t color)
 
     ano_addcheck(data);
 
-    return cnt + 6;
+    HAL_UART_Transmit(&huart2, data, size + 7, 100);
 }
 
 /**
@@ -456,8 +458,7 @@ void ANO_Receive_Analyze(uint8_t *data)
         uint16_t par = (uint16_t)data[4];
         ANO_Send_Param(a, par, 5);
 
-        while (HAL_UART_Transmit_DMA(&huart2, a, 12))
-            ;
+        HAL_UART_Transmit(&huart2, a, 12, 10);
     }
     // else if (id == 0XE2)
     // {

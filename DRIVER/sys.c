@@ -50,8 +50,8 @@ void SYS_Init(void)
     SENSOR_Init();
     PID_Init();
 
-    // Todo 开串口 ano_Init?
     __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
+    HAL_ADC_Start(&hadc1);
 
     printf("System Initialize\n");
 }

@@ -22,6 +22,9 @@ extern "C" {
 #include "ucos_ii.h"
 
 /* Exported types ------------------------------------------------------------*/
+/**
+ * @brief Remote channel name
+ */
 enum
 {
     ROL = 0,
@@ -94,6 +97,9 @@ typedef union
     } angle;
 } EulerAngles;
 
+/**
+ * @brief Control value struct
+ */
 typedef struct
 {
     float roll;

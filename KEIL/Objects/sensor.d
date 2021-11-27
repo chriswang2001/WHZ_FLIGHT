@@ -46,6 +46,8 @@
 .\objects\sensor.o: ..\uCOS\os_cpu.h
 .\objects\sensor.o: ..\uCOS\os_trace.h
 .\objects\sensor.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\objects\sensor.o: ..\HAL\adc.h
+.\objects\sensor.o: ..\DRIVER\ano.h
 .\objects\sensor.o: ..\LIB\Inc\arm_math.h
 .\objects\sensor.o: ..\LIB\Inc\core_cm4.h
 .\objects\sensor.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h

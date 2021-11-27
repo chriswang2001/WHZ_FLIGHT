@@ -44,7 +44,6 @@
 .\objects\main.o: ..\uCOS\os_cfg.h
 .\objects\main.o: ..\uCOS\os_cpu.h
 .\objects\main.o: ..\uCOS\os_trace.h
-.\objects\main.o: ..\HAL\adc.h
 .\objects\main.o: ..\FLIGHT\ahrs.h
 .\objects\main.o: ..\DRIVER\ano.h
 .\objects\main.o: ..\DRIVER\motor.h

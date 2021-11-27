@@ -14,7 +14,7 @@
 #include "sensor.h"
 
 /* Definitions ---------------------------------------------------------------*/
-#define sampleFreq 100.0f // sample frequency in Hz
+#define sampleFreq 200.0f // sample frequency in Hz
 #define betaDef 0.41f     // 2 * proportional gain
 
 /* Variables -----------------------------------------------------------------*/
@@ -26,10 +26,17 @@ static inline void QToEuler()
 {
     const float qwqwMinusHalf = q0 * q0 - 0.5f; // calculate common terms to avoid repeated operations
 
-    attitude.angle.roll = atan2f(q2 * q3 - q0 * q1, qwqwMinusHalf + q3 * q3) * radianTodegree;
-    attitude.angle.pitch = -1.0f * sinf(2.0f * (q1 * q3 + q0 * q2)) * radianTodegree;
-    attitude.angle.yaw = atan2f(q1 * q2 - q0 * q3, qwqwMinusHalf + q1 * q1) * radianTodegree;
+    attitude.angle.roll = atan2f(q2 * q3 - q0 * q1, qwqwMinusHalf + q3 * q3) * RadianToDegree;
+    attitude.angle.pitch = -1.0f * arm_sin_f32(2.0f * (q1 * q3 + q0 * q2)) * RadianToDegree;
+    attitude.angle.yaw = atan2f(q1 * q2 - q0 * q3, qwqwMinusHalf + q1 * q1) * RadianToDegree;
 }
+
+void AHRS_Update()
+{
+    MadgwickAHRSupdate(-gyro.axis.y * DegreeToRadian, -gyro.axis.x * DegreeToRadian, gyro.axis.z * DegreeToRadian, -accel.axis.y, -accel.axis.x, accel.axis.z, 0, 0, 0);
+    QToEuler();
+}
+
 /**
  * @brief Madgwick's AHRS algorithms
  */
@@ -130,8 +137,6 @@ void MadgwickAHRSupdate(float gx, float gy, float gz, float ax, float ay, float 
     q1 *= recipNorm;
     q2 *= recipNorm;
     q3 *= recipNorm;
-	
-	QToEuler();
 }
 
 /**
@@ -205,6 +210,4 @@ void MadgwickAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, flo
     q1 *= recipNorm;
     q2 *= recipNorm;
     q3 *= recipNorm;
-	
-	QToEuler();
 }
