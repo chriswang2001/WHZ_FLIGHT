@@ -16,24 +16,25 @@
 #include "sensor.h"
 #include "ucos_ii.h"
 #include "usart.h"
+#include <tim.h>
 
 // START Task
-#define START_TASK_PRIO 10             // Set task priority, Start task has the lowest priority
-#define START_STK_SIZE 128             // Set task stack size
-OS_STK START_TASK_STK[START_STK_SIZE]; // Task task stack
-void START_Task(void *pdata);          // Task function
+#define START_TASK_PRIO 10                                         // Set task priority, Start task has the lowest priority
+#define START_STK_SIZE 128                                         // Set task stack size
+__attribute__((aligned(8))) OS_STK START_TASK_STK[START_STK_SIZE]; // Task task stack
+void START_Task(void *pdata);                                      // Task function
 
 // ANO Task
-#define ANO_TASK_PRIO 9            // Set task priority
-#define ANO_STK_SIZE 256           // Set task stack size
-OS_STK ANO_TASK_STK[ANO_STK_SIZE]; // Task task stack
-void ANO_Task(void *pdata);        // Task function
+#define ANO_TASK_PRIO 9                                        // Set task priority
+#define ANO_STK_SIZE 256                                       // Set task stack size
+__attribute__((aligned(8))) OS_STK ANO_TASK_STK[ANO_STK_SIZE]; // Task task stack
+void ANO_Task(void *pdata);                                    // Task function
 
 // FLIGHT Task
-#define FLIGHT_TASK_PRIO 8               // Set task priority
-#define FLIGHT_STK_SIZE 256              // Set task stack size
-OS_STK FLIGHT_TASK_STK[FLIGHT_STK_SIZE]; // Task task stack
-void FLIGHT_Task(void *pdata);           // Task function
+#define FLIGHT_TASK_PRIO 8                                           // Set task priority
+#define FLIGHT_STK_SIZE 256                                          // Set task stack size
+__attribute__((aligned(8))) OS_STK FLIGHT_TASK_STK[FLIGHT_STK_SIZE]; // Task task stack
+void FLIGHT_Task(void *pdata);                                       // Task function
 
 /**
  * @brief The application entry point.
@@ -92,7 +93,7 @@ void ANO_Task(void *pdata)
         if (count % battery == 0)
             size += ANO_Send_Battery(data + size, voltage, OSCPUUsage);
         if (count % pwm == 0)
-            size += ANO_Send_PWM(data + size, mvalue[0], mvalue[1], mvalue[2], mvalue[3]);
+            size += ANO_Send_PWM(data + size, __HAL_TIM_GET_COMPARE(&htim3, TIM_CHANNEL_1), __HAL_TIM_GET_COMPARE(&htim3, TIM_CHANNEL_2), __HAL_TIM_GET_COMPARE(&htim3, TIM_CHANNEL_3), __HAL_TIM_GET_COMPARE(&htim3, TIM_CHANNEL_4));
         if (count % remote == 0)
             size += ANO_Send_Remote(data + size, (int16_t *)rvalue, CHANNEL_MAX);
 

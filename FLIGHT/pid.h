@@ -18,8 +18,10 @@ extern "C" {
 #include "main.h"
 
 #define MAX_ANGLE 35
+#define MAX_Rate 50
 
 void PID_Init(void);
+void PID_Upadte(void);
 
 #ifdef __cplusplus
 }
