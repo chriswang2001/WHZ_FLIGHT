@@ -49,7 +49,7 @@ int main(void)
 }
 
 /**
- * @brief Start task: sys init and create other tasks
+ * @brief Start Task: sys init and create other tasks
  * @param pdata
  */
 void START_Task(void *pdata)
@@ -68,18 +68,22 @@ void START_Task(void *pdata)
     OSTaskDel(START_TASK_PRIO); // Delete start task
 }
 
+/**
+ * @brief ANO Taks: send necessary information to ano host
+ * @param pdata
+ */
 void ANO_Task(void *pdata)
 {
-    const uint16_t MAX_DATA_SIZE = 300;
+#define MAX_DATA_SIZE 300
+
     static uint8_t count = 0;
     static uint8_t data[MAX_DATA_SIZE];
-
     const uint8_t sensor = 5, euler = 1, battery = 50, pwm = 1, remote = 3;
 
     while (1)
     {
         count++;
-        uint8_t size = 0;
+        uint16_t size = 0;
 
         if (count % sensor == 0)
             size += ANO_Send_Sensor(data + size, accel.axis.x * 1000, accel.axis.y * 1000, accel.axis.z * 1000, gyro.axis.x * 100, gyro.axis.y * 100, gyro.axis.z * 100);
@@ -92,7 +96,7 @@ void ANO_Task(void *pdata)
         if (count % remote == 0)
             size += ANO_Send_Remote(data + size, (int16_t *)rvalue, CHANNEL_MAX);
 
-        if (size < MAX_DATA_SIZE)
+        if (size <= MAX_DATA_SIZE)
             HAL_UART_Transmit_DMA(&huart2, data, size);
         else
         {
@@ -104,6 +108,10 @@ void ANO_Task(void *pdata)
     }
 }
 
+/**
+ * @brief Flight Task: flight control
+ * @param pdata
+ */
 void FLIGHT_Task(void *pdata)
 {
     while (1)

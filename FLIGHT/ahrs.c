@@ -15,7 +15,7 @@
 
 /* Definitions ---------------------------------------------------------------*/
 #define sampleFreq 200.0f // sample frequency in Hz
-#define betaDef 0.41f     // 2 * proportional gain
+#define betaDef 0.31f     // 2 * proportional gain
 
 /* Variables -----------------------------------------------------------------*/
 volatile float beta = betaDef;                             // 2 * proportional gain (Kp)
@@ -24,16 +24,16 @@ EulerAngles attitude;
 
 static inline void QToEuler()
 {
-    const float qwqwMinusHalf = q0 * q0 - 0.5f; // calculate common terms to avoid repeated operations
+    const float q0q0MinusHalf = q0 * q0 - 0.5f; // calculate common terms to avoid repeated operations
 
-    attitude.angle.roll = atan2f(q2 * q3 - q0 * q1, qwqwMinusHalf + q3 * q3) * RadianToDegree;
-    attitude.angle.pitch = -1.0f * arm_sin_f32(2.0f * (q1 * q3 + q0 * q2)) * RadianToDegree;
-    attitude.angle.yaw = atan2f(q1 * q2 - q0 * q3, qwqwMinusHalf + q1 * q1) * RadianToDegree;
+    attitude.angle.roll = atan2f(q2 * q3 + q0 * q1, q0q0MinusHalf + q3 * q3) * RadianToDegree;
+    attitude.angle.pitch = -1.0f * arm_sin_f32(2.0f * (q1 * q3 - q0 * q2)) * RadianToDegree;
+    attitude.angle.yaw = atan2f(q1 * q2 + q0 * q3, q0q0MinusHalf + q1 * q1) * RadianToDegree;
 }
 
 void AHRS_Update()
 {
-    MadgwickAHRSupdate(-gyro.axis.y * DegreeToRadian, -gyro.axis.x * DegreeToRadian, gyro.axis.z * DegreeToRadian, -accel.axis.y, -accel.axis.x, accel.axis.z, 0, 0, 0);
+    MadgwickAHRSupdate(gyro.axis.y * DegreeToRadian, gyro.axis.x * DegreeToRadian, -gyro.axis.z * DegreeToRadian, -accel.axis.y, -accel.axis.x, accel.axis.z, 0, 0, 0);
     QToEuler();
 }
 

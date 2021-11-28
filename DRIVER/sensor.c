@@ -79,7 +79,7 @@ inline void SENSOR_Update(void)
 
     voltage = HAL_ADC_GetValue(&hadc1) * ADCToVoltage;
     HAL_ADC_Start(&hadc1);
-    if (voltage < 11.1f && voltage > 9.f)
+    if (voltage < 11.1f && voltage > 10.f)
     {
         char string[] = "low voltage, please return to base";
         ANO_Send_String(string, sizeof(string), RED);
