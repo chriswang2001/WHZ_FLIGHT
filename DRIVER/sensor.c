@@ -36,6 +36,19 @@ const float DegreeToRadian = PI / 180.f;
 const float RadianToDegree = 180.f / PI;
 const float ADCToVoltage = 3.3f / 4096.f;
 
+/* Function prototypes -------------------------------------------------------*/
+void MPU_Init(void);
+bool MPU_Connect(void);
+void HMC_Init(void);
+bool HMC_Connect(void);
+void MS_Init(void);
+void MPU_ReadAccelRaw(int16_t *dest);
+void MPU_ReadGyroRaw(int16_t *dest);
+void HMC_ReadMagRaw(int16_t *dest);
+uint32_t MS_ReadPressure(void);
+bool MS_WriteCMD(uint8_t cmd);
+uint32_t MS_ReadADC(void);
+
 /**
  * @brief sensor initialize including mpu hmc and ms
  */
@@ -49,8 +62,13 @@ void SENSOR_Init(void)
         HMC_Init();
 
     MS_Init();
+
+    HAL_ADC_Start(&hadc1);
 }
 
+/**
+ * @brief update sensor value accel gyro mag baro adc, running at 200Hz
+ */
 inline void SENSOR_Update(void)
 {
     Int16Vector3 accelCount, gyroCount, magCount; // Stores the 16-bit signed accelerometer, gyro, magnetometer sensor output
@@ -81,11 +99,19 @@ inline void SENSOR_Update(void)
     HAL_ADC_Start(&hadc1);
     if (voltage < 11.1f && voltage > 10.f)
     {
-        char string[] = "low voltage, please return to base";
-        ANO_Send_String(string, sizeof(string), RED);
+        static uint16_t count = 0;
+        if (count % 1000 == 0)
+        {
+            char string[] = "low voltage, please return to base";
+            ANO_Send_String(string, sizeof(string), RED);
+        }
     }
 }
 
+/**
+ * @brief read actual pressure from
+ * @return uint32_t pressure value *100 mbar
+ */
 uint32_t MS_ReadPressure(void)
 {
     static uint8_t state = 0;
@@ -239,6 +265,10 @@ void HMC_ReadMagRaw(int16_t *dest)
     dest[2] = ((int16_t)rawData[2] << 8) | rawData[3];
 }
 
+/**
+ * @brief read prom data
+ * @param dest destination array to store data
+ */
 void MS_ReadPROM(uint16_t *dest)
 {
     for (int i = 0; i < 8; i++)
@@ -251,11 +281,21 @@ void MS_ReadPROM(uint16_t *dest)
     }
 }
 
+/**
+ * @brief send cmd to ms5611
+ * @param cmd command
+ * @return true send successfully
+ * @return false send fail
+ */
 bool MS_WriteCMD(uint8_t cmd)
 {
     return SENSOR_WriteByte(MS5611_ADDRESS, cmd);
 }
 
+/**
+ * @brief read adc value from ms5611
+ * @return uint32_t
+ */
 uint32_t MS_ReadADC(void)
 {
     uint8_t rawData[3];
@@ -446,7 +486,7 @@ bool HMC_SelfTest(void)
 
 /**
  * @brief calculate checksum from PROM register contents
- * @param n_prom
+ * @param n_prom prom data
  * @return true
  * @return false
  */
@@ -594,11 +634,16 @@ void MPU_Calibrate(float *gyrobias, float *accbias)
     printf("%f\t%f\t%f\t °/s\n", gyroBias.array[0], gyroBias.array[1], gyroBias.array[2]);
 }
 
+/**
+ * @brief caculate error from soft iron and hard iron
+ * @param magbias offset error by hard iron
+ * @param magscale scale error by soft iron
+ */
 void HMC_Calibration(float *magbias, float *magscale)
 {
     int ii = 0;
     int32_t mag_bias[3] = {0, 0, 0}, mag_scale[3] = {0, 0, 0};
-    int16_t mag_max[3] = {-32767, -32767, -32767}, mag_min[3] = {32767, 32767, 32767}, mag_temp[3] = {0, 0, 0};
+    int16_t mag_max[3] = {-32767, -32767, -32767}, mag_min[3] = {32767, 32767, 32767}, mag_temp[3], mag_temppre[3];
 
     printf("Mag Calibration: Wave device in a figure eight until done!\n");
     HAL_Delay(1000);
@@ -614,6 +659,8 @@ void HMC_Calibration(float *magbias, float *magscale)
             HMC_ReadMagRaw(mag_temp); // Read the mag data
             for (int jj = 0; jj < 3; jj++)
             {
+                mag_temp[jj] = mag_temppre[jj] * 0.8 + mag_temp[jj] * 0.2;
+                mag_temppre[jj] = mag_temp[jj];
                 if (mag_temp[jj] > mag_max[jj]) mag_max[jj] = mag_temp[jj];
                 if (mag_temp[jj] < mag_min[jj]) mag_min[jj] = mag_temp[jj];
             }

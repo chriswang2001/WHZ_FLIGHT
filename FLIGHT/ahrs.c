@@ -18,10 +18,17 @@
 #define betaDef 0.31f     // 2 * proportional gain
 
 /* Variables -----------------------------------------------------------------*/
+EulerAngles attitude;
 volatile float beta = betaDef;                             // 2 * proportional gain (Kp)
 volatile float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f; // quaternion of sensor frame relative to auxiliary frame
-EulerAngles attitude;
 
+/* Function prototypes -------------------------------------------------------*/
+void MadgwickAHRSupdate(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz);
+void MadgwickAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, float az);
+
+/**
+ * @brief quarternion to euler
+ */
 static inline void QToEuler()
 {
     const float q0q0MinusHalf = q0 * q0 - 0.5f; // calculate common terms to avoid repeated operations
@@ -31,9 +38,12 @@ static inline void QToEuler()
     attitude.angle.yaw = atan2f(q1 * q2 + q0 * q3, q0q0MinusHalf + q1 * q1) * RadianToDegree;
 }
 
+/**
+ * @brief update estimation of oriention
+ */
 void AHRS_Update()
 {
-    MadgwickAHRSupdate(gyro.axis.y * DegreeToRadian, gyro.axis.x * DegreeToRadian, -gyro.axis.z * DegreeToRadian, -accel.axis.y, -accel.axis.x, accel.axis.z, 0, 0, 0);
+    MadgwickAHRSupdate(gyro.axis.y, gyro.axis.x, -gyro.axis.z, -accel.axis.y, -accel.axis.x, accel.axis.z, 0, 0, 0);
     QToEuler();
 }
 
@@ -47,6 +57,10 @@ void MadgwickAHRSupdate(float gx, float gy, float gz, float ax, float ay, float 
     float qDot1, qDot2, qDot3, qDot4;
     float hx, hy;
     float _2q0mx, _2q0my, _2q0mz, _2q1mx, _2bx, _2bz, _4bx, _4bz, _2q0, _2q1, _2q2, _2q3, _2q0q2, _2q2q3, q0q0, q0q1, q0q2, q0q3, q1q1, q1q2, q1q3, q2q2, q2q3, q3q3;
+
+    gx *= DegreeToRadian;
+    gy *= DegreeToRadian;
+    gz *= DegreeToRadian;
 
     // Use IMU algorithm if magnetometer measurement invalid (avoids NaN in magnetometer normalisation)
     if ((mx == 0.0f) && (my == 0.0f) && (mz == 0.0f))

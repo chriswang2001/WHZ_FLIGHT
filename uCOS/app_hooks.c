@@ -136,13 +136,7 @@ void App_TaskDelHook(OS_TCB *ptcb)
 #if OS_VERSION >= 251
 void App_TaskIdleHook(void)
 {
-    if (OSPrioCur != 63)
-    {
-        printf("OSPrioCur: %d\n", OSPrioCur);
-        OSPrioCur = 63;
-        while (1)
-            ;
-    }
+    OSPrioCur = 63;
 }
 #endif
 
@@ -201,8 +195,8 @@ void App_TaskReturnHook(OS_TCB *ptcb)
 #if OS_TASK_SW_HOOK_EN > 0
 void App_TaskSwHook(void)
 {
-    if (OSTCBPrioTbl[OSPrioHighRdy] != OSTCBHighRdy)
-        printf("%d\t%d\n", OSPrioHighRdy, OSTCBHighRdy);
+    if (OSTCBHighRdy != OSTCBPrioTbl[OSPrioHighRdy])
+        OSTCBHighRdy = OSTCBPrioTbl[OSPrioHighRdy];
 }
 #endif
 

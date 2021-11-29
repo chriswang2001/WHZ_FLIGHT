@@ -67,22 +67,6 @@ typedef union
 } FloatVector3;
 
 /**
- * @brief Quaternion, the 'w' element is the first element.
- */
-typedef union
-{
-    float array[4];
-
-    struct
-    {
-        float w;
-        float x;
-        float y;
-        float z;
-    } element;
-} Quaternion;
-
-/**
  * @brief Euler angles union in the Aerospace sequence, also known as the ZYX sequence.
  */
 typedef union

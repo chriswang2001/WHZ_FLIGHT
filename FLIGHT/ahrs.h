@@ -24,8 +24,6 @@ extern EulerAngles attitude;
 
 /* Exported functions prototypes ---------------------------------------------*/
 void AHRS_Update(void);
-void MadgwickAHRSupdate(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz);
-void MadgwickAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, float az);
 
 #ifdef __cplusplus
 }

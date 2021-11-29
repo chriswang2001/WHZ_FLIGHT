@@ -15,11 +15,24 @@
 extern "C" {
 #endif
 
+/* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include <arm_math.h>
 
+/* Defines -------------------------------------------------------------------*/
 #define MAX_ANGLE 35
 #define MAX_Rate 50
 
+/* Exported Variables --------------------------------------------------------*/
+extern arm_pid_instance_f32 PID_angle_roll;
+extern arm_pid_instance_f32 PID_rate_roll;
+extern arm_pid_instance_f32 PID_angle_pitch;
+extern arm_pid_instance_f32 PID_rate_pitch;
+extern arm_pid_instance_f32 PID_rate_yaw;
+extern arm_pid_instance_f32 PID_altitude;
+extern control_t rate_out;
+
+/* Exported functions prototypes ---------------------------------------------*/
 void PID_Init(void);
 void PID_Upadte(void);
 

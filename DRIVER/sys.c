@@ -10,6 +10,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "sys.h"
 #include "adc.h"
+#include "ano.h"
 #include "dma.h"
 #include "gpio.h"
 #include "i2c.h"
@@ -49,9 +50,7 @@ void SYS_Init(void)
     REMOTE_Init();
     SENSOR_Init();
     PID_Init();
-
-    __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
-    HAL_ADC_Start(&hadc1);
+    ANO_Init();
 
     printf("System Initialize\n");
 }

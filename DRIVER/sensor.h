@@ -24,25 +24,13 @@ extern "C" {
 void SENSOR_Update(void);
 void SENSOR_Init(void);
 
-void MPU_Init(void);
-bool MPU_Connect(void);
-void HMC_Init(void);
-bool HMC_Connect(void);
-void MS_Init(void);
-void MPU_ReadAccelRaw(int16_t *dest);
-void MPU_ReadGyroRaw(int16_t *dest);
-void HMC_ReadMagRaw(int16_t *dest);
-uint32_t MS_ReadPressure(void);
-bool MS_WriteCMD(uint8_t cmd);
-uint32_t MS_ReadADC(void);
+void HMC_Calibration(float *magbias, float *magscale);
 
 /* Exported Variables --------------------------------------------------------*/
 extern FloatVector3 accel, gyro, mag;
-extern FloatVector3 accelBias, gyroBias, magBias, magScale;
-extern uint8_t Gscale, Ascale, Mscale;
-extern const float aRes[4], gRes[4], mRes[8];
-extern const float DegreeToRadian, RadianToDegree, ADCToVoltage;
+extern FloatVector3 magBias, magScale;
 extern float altitude, voltage;
+extern const float DegreeToRadian, RadianToDegree, ADCToVoltage;
 
 /* Defines -------------------------------------------------------------------*/
 #define I2Cx_TIMEOUT 1000

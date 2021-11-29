@@ -9,7 +9,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "remote.h"
 #include "tim.h"
+#include <stdbool.h>
 
 /* Defines -------------------------------------------------------------------*/
 #define PWM_MAX 2000
@@ -17,10 +19,8 @@
 #define PWM_LIMIT(_PWM_) \
     _PWM_ < PWM_MIN ? PWM_MIN : (_PWM_ > PWM_MAX ? PWM_MAX : _PWM_)
 
-uint16_t mvalue[4];
-
 /**
- * @brief Motor Initialize: config high level value to 1ms
+ * @brief Motor Initialize: set high level value to 1ms
  */
 void MOTOR_Init(void)
 {
@@ -46,15 +46,30 @@ void MOTOR_Set(uint16_t M1_PWM, uint16_t M2_PWM, uint16_t M3_PWM, uint16_t M4_PW
 }
 
 /**
+ * @brief Lock motor when remote send lock value
+ * @return true motor lock
+ * @return false motor not lock
+ */
+bool MOTOR_LockCheck()
+{
+    if (rvalue[LOCK] < 1500)
+    {
+        MOTOR_Set(1000, 1000, 1000, 1000);
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * @brief Set motor rotaton rate by PID control
  * @param control control value caulated by PID controller
  */
 void MOTOR_Control(control_t *control)
 {
+    if (MOTOR_LockCheck())
+        return;
+
     float a = control->altitude, p = control->pitch, r = control->roll, y = control->yaw;
-    mvalue[0] = a - p + r + y;
-    mvalue[1] = a - p - r - y;
-    mvalue[2] = a + p - r + y;
-    mvalue[3] = a + p + r - y;
-    MOTOR_Set(mvalue[0], mvalue[1], mvalue[2], mvalue[3]);
+    MOTOR_Set(a - p + r + y, a - p - r - y, a + p - r + y, a + p + r - y);
 }

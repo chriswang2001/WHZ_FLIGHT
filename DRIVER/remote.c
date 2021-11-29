@@ -177,8 +177,7 @@ void TIM2_IRQHandler(void)
 
     TIM_CC_Handler(cc, &htim2);
 
-    if (rvalue[LOCK] < 1500)
-        MOTOR_Set(1000, 1000, 1000, 1000);
+    MOTOR_LockCheck();
 
     OSIntExit(); /* Tell uC/OS-II that we are leaving the ISR            */
 }

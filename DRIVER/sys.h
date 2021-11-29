@@ -15,8 +15,6 @@
 extern "C" {
 #endif
 
-/* Includes ------------------------------------------------------------------*/
-
 /* Exported functions prototypes ---------------------------------------------*/
 void SYS_Init(void);
 void Error_Handler(void);

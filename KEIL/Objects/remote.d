@@ -24,5 +24,5 @@
   ..\DRIVER\sys.h ..\uCOS\ucos_ii.h ..\uCOS\app_cfg.h \
   C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdarg.h \
   C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdio.h ..\uCOS\os_cfg.h \
-  ..\uCOS\os_cpu.h ..\uCOS\os_trace.h ..\HAL\tim.h \
-  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdbool.h
+  ..\uCOS\os_cpu.h ..\uCOS\os_trace.h \
+  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdbool.h ..\HAL\tim.h

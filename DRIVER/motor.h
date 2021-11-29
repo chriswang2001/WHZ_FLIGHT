@@ -17,14 +17,13 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
-/* Exported Variables --------------------------------------------------------*/
-extern uint16_t mvalue[4];
+#include <stdbool.h>
 
 /* Exported functions prototypes ---------------------------------------------*/
 void MOTOR_Init(void);
 void MOTOR_Set(uint16_t M1_PWM, uint16_t M2_PWM, uint16_t M3_PWM, uint16_t M4_PWM);
 void MOTOR_Control(control_t *control);
+bool MOTOR_LockCheck();
 
 #ifdef __cplusplus
 }

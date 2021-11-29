@@ -23,9 +23,9 @@
   ..\LIB\Inc\stm32f4xx_hal_uart.h ..\DRIVER\sys.h ..\uCOS\ucos_ii.h \
   ..\uCOS\app_cfg.h C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdarg.h \
   C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdio.h ..\uCOS\os_cfg.h \
-  ..\uCOS\os_cpu.h ..\uCOS\os_trace.h ..\FLIGHT\ahrs.h \
-  ..\LIB\Inc\stm32f4xx.h ..\LIB\Inc\arm_math.h \
+  ..\uCOS\os_cpu.h ..\uCOS\os_trace.h ..\LIB\Inc\arm_math.h \
   C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\string.h \
-  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\math.h ..\DRIVER\motor.h \
-  ..\DRIVER\remote.h ..\DRIVER\sensor.h \
-  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdbool.h
+  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\math.h ..\FLIGHT\ahrs.h \
+  ..\LIB\Inc\stm32f4xx.h ..\DRIVER\motor.h \
+  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdbool.h ..\DRIVER\remote.h \
+  ..\DRIVER\sensor.h
