@@ -19,14 +19,14 @@
 
 /* Variables -----------------------------------------------------------------*/
 arm_pid_instance_f32 PID_angle_roll = {
-    .Kp = 0.0f,
+    .Kp = 1.f,
     .Ki = 0.0f,
     .Kd = 0.0f,
 };
 
 arm_pid_instance_f32 PID_rate_roll = {
-    .Kp = 0.1f,
-    .Ki = 0.0f,
+    .Kp = 0.5f,
+    .Ki = 0.1f,
     .Kd = 0.0f,
 };
 
@@ -94,6 +94,7 @@ void PID_Upadte(void)
     }
 
     rate_out.roll = arm_pid_f32(&PID_rate_roll, angle_out.roll - gyro.axis.y);
+//    rate_out.roll = arm_pid_f32(&PID_rate_roll, 0);
     rate_out.pitch = arm_pid_f32(&PID_rate_pitch, angle_out.pitch + gyro.axis.x);
     rate_out.yaw = arm_pid_f32(&PID_rate_yaw, set.yaw + gyro.axis.z);
     rate_out.altitude = set.altitude;

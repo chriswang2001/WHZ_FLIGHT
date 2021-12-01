@@ -29,7 +29,7 @@ void MadgwickAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, flo
 /**
  * @brief quarternion to euler
  */
-static inline void QToEuler()
+static inline void QToEuler(void)
 {
     const float q0q0MinusHalf = q0 * q0 - 0.5f; // calculate common terms to avoid repeated operations
 
@@ -41,7 +41,7 @@ static inline void QToEuler()
 /**
  * @brief update estimation of oriention
  */
-void AHRS_Update()
+void AHRS_Update(void)
 {
     MadgwickAHRSupdate(gyro.axis.y, gyro.axis.x, -gyro.axis.z, -accel.axis.y, -accel.axis.x, accel.axis.z, 0, 0, 0);
     QToEuler();

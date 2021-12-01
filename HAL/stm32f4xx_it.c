@@ -21,6 +21,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_it.h"
 #include "main.h"
+#include "motor.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -86,13 +87,11 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
     /* USER CODE BEGIN HardFault_IRQn 0 */
-
-    /* USER CODE END HardFault_IRQn 0 */
-    while (1)
+    while(1)
     {
-        /* USER CODE BEGIN W1_HardFault_IRQn 0 */
-        /* USER CODE END W1_HardFault_IRQn 0 */
+        MOTOR_Set(1000, 1000, 1000, 1000);
     }
+    /* USER CODE END HardFault_IRQn 0 */
 }
 
 /**

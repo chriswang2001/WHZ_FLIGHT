@@ -28,7 +28,7 @@ void START_Task(void *pdata);                                      // Task funct
 
 // ANO Task
 #define ANO_TASK_PRIO 9                                        // Set task priority
-#define ANO_STK_SIZE 256                                       // Set task stack size
+#define ANO_STK_SIZE 128                                       // Set task stack size
 __attribute__((aligned(8))) OS_STK ANO_TASK_STK[ANO_STK_SIZE]; // Task task stack
 void ANO_Task(void *pdata);                                    // Task function
 
@@ -64,8 +64,8 @@ void START_Task(void *pdata)
 #endif
 
     OS_ENTER_CRITICAL();                                                                                     // Enter critical area (close interrupt)
-    OSTaskCreate(ANO_Task, (void *)0, (OS_STK *)&ANO_TASK_STK[ANO_STK_SIZE - 1], ANO_TASK_PRIO);             // Create ANO Task
-    OSTaskCreate(FLIGHT_Task, (void *)0, (OS_STK *)&FLIGHT_TASK_STK[FLIGHT_STK_SIZE - 1], FLIGHT_TASK_PRIO); // Create FLIGHT Task
+    OSTaskCreateExt(ANO_Task, (void *)0, (OS_STK *)&ANO_TASK_STK[ANO_STK_SIZE - 1], ANO_TASK_PRIO, 1, &ANO_TASK_STK[0], ANO_STK_SIZE, (void *)0, OS_TASK_OPT_STK_CHK | OS_TASK_OPT_STK_CLR);                   // Create ANO Task
+    OSTaskCreateExt(FLIGHT_Task, (void *)0, (OS_STK *)&FLIGHT_TASK_STK[FLIGHT_STK_SIZE - 1], FLIGHT_TASK_PRIO, 2, &FLIGHT_TASK_STK[0], FLIGHT_STK_SIZE, (void *)0, OS_TASK_OPT_STK_CHK | OS_TASK_OPT_STK_CLR); // Create FLIGHT Task
     OS_EXIT_CRITICAL();                                                                                      // Exit critical area (open interrupt)
 
     OSTaskDel(START_TASK_PRIO); // Delete start task
@@ -81,7 +81,7 @@ void ANO_Task(void *pdata)
 
     static uint8_t count = 0;
     static uint8_t data[MAX_DATA_SIZE];
-    const uint8_t sensor = 5, sensor2 = 7, euler = 1, battery = 50, pwm = 1, control = 1, remote = 6;
+    static const uint8_t sensor = 5, sensor2 = 7, euler = 1, battery = 50, pwm = 1, control = 1, remote = 6;
 
     while (1)
     {
@@ -91,7 +91,7 @@ void ANO_Task(void *pdata)
         if (count % sensor == 0)
             size += ANO_Send_Sensor(data + size, accel.axis.x * 1000, accel.axis.y * 1000, accel.axis.z * 1000, gyro.axis.x * 100, gyro.axis.y * 100, gyro.axis.z * 100);
         if (count % sensor2 == 0)
-            size += ANO_Send_Sensor2(data + size, mag.axis.x * 10, mag.axis.y * 10, mag.axis.z * 10, altitude * 100, 0);
+            size += ANO_Send_Sensor2(data + size, mag.axis.x * 10, mag.axis.y * 10, mag.axis.z * 10, altitude * 100.f, 0);
         if (count % euler == 0)
             size += ANO_Send_Euler(data + size, attitude.angle.roll, attitude.angle.pitch, attitude.angle.yaw);
         if (count % battery == 0)
@@ -101,7 +101,7 @@ void ANO_Task(void *pdata)
         if (count % control == 0)
             size += ANO_Send_Control(data + size, rate_out.roll, rate_out.pitch, rate_out.altitude, rate_out.yaw);
         if (count % remote == 0)
-            size += ANO_Send_Remote(data + size, (int16_t *)rvalue, CHANNEL_MAX);
+            size += ANO_Send_Remote(data + size, rvalue[0], rvalue[1], rvalue[2], rvalue[3], rvalue[4], rvalue[5], rvalue[6], 0, 0, 0);
 
         if (size <= MAX_DATA_SIZE)
             HAL_UART_Transmit_DMA(&huart2, data, size);

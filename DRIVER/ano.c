@@ -334,7 +334,7 @@ uint8_t ANO_Send_Control(uint8_t *data, int16_t roll, int16_t pitch, int16_t thr
  * @param data data to send
  * @retval the length of data
  */
-uint8_t ANO_Send_Remote(uint8_t *data, int16_t *ch, uint8_t size)
+uint8_t ANO_Send_Remote(uint8_t *data, int16_t ch1, int16_t ch2, int16_t ch3, int16_t ch4, int16_t ch5, int16_t ch6, int16_t ch7, int16_t ch8, int16_t ch9, int16_t ch10)
 {
     uint8_t cnt = 0;
 
@@ -343,16 +343,38 @@ uint8_t ANO_Send_Remote(uint8_t *data, int16_t *ch, uint8_t size)
     data[cnt++] = 0x40;
     data[cnt++] = 20;
 
-    for (int i = 0; i < size; i++)
-    {
-        data[cnt++] = BYTE0(ch[i]);
-        data[cnt++] = BYTE1(ch[i]);
-    }
+    data[cnt++] = BYTE0(ch1);
+    data[cnt++] = BYTE1(ch1);
+
+    data[cnt++] = BYTE0(ch2);
+    data[cnt++] = BYTE1(ch2);
+
+    data[cnt++] = BYTE0(ch3);
+    data[cnt++] = BYTE1(ch3);
+
+    data[cnt++] = BYTE0(ch4);
+    data[cnt++] = BYTE1(ch4);
+
+    data[cnt++] = BYTE0(ch5);
+    data[cnt++] = BYTE1(ch5);
+
+    data[cnt++] = BYTE0(ch6);
+    data[cnt++] = BYTE1(ch6);
+
+    data[cnt++] = BYTE0(ch7);
+    data[cnt++] = BYTE1(ch7);
+
+    data[cnt++] = BYTE0(ch8);
+    data[cnt++] = BYTE1(ch8);
+
+    data[cnt++] = BYTE0(ch9);
+    data[cnt++] = BYTE1(ch9);
+
+    data[cnt++] = BYTE0(ch10);
+    data[cnt++] = BYTE1(ch10);
 
     ano_addcheck(data);
-
-    // some spaces are reseved
-    return 26;
+    return cnt + 2;
 }
 
 /**
@@ -436,6 +458,8 @@ void ANO_Receive_Analyze(uint8_t *data)
     }
     else if (id == 0xE0)
     {
+        ANO_Send_Verification(id, data[15], data[16]);
+
         if (data[4] == 0x01 && data[5] == 0x00 && data[6] == 0x04)
             HMC_Calibration(magBias.array, magScale.array);
     }

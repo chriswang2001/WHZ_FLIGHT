@@ -30,7 +30,8 @@ const float mRes[8] = {1.f / 1.37f, 1.f / 1.09f, 1.f / 0.82f, 1.f / 0.66f, 1.f /
 FloatVector3 accel, gyro, mag;                                                    // Stores the real sensor value in g's, degrees per second, milliGauss
 FloatVector3 accelBias, gyroBias, magBias, magScale = {.array = {1.f, 1.f, 1.f}}; // Offser and scale calibration for sensor in g's, degrees per second, milliGauss
 uint16_t msPROM[8];
-float altitude, voltage, pressure, initialPressure = 1.f;
+int32_t pressure;
+float altitude, voltage, initialPressure = 1.f;
 
 const float DegreeToRadian = PI / 180.f;
 const float RadianToDegree = 180.f / PI;
@@ -45,7 +46,7 @@ void MS_Init(void);
 void MPU_ReadAccelRaw(int16_t *dest);
 void MPU_ReadGyroRaw(int16_t *dest);
 void HMC_ReadMagRaw(int16_t *dest);
-uint32_t MS_ReadPressure(void);
+int32_t MS_ReadPressure(void);
 bool MS_WriteCMD(uint8_t cmd);
 uint32_t MS_ReadADC(void);
 
@@ -69,9 +70,9 @@ void SENSOR_Init(void)
 /**
  * @brief update sensor value accel gyro mag baro adc, running at 200Hz
  */
-inline void SENSOR_Update(void)
+void SENSOR_Update(void)
 {
-    Int16Vector3 accelCount, gyroCount, magCount; // Stores the 16-bit signed accelerometer, gyro, magnetometer sensor output
+    static Int16Vector3 accelCount, gyroCount, magCount; // Stores the 16-bit signed accelerometer, gyro, magnetometer sensor output
 
     MPU_ReadAccelRaw(accelCount.array); // Read the x/y/z adc values
     for (int i = 0; i < 3; i++)
@@ -92,10 +93,10 @@ inline void SENSOR_Update(void)
     }
 
     pressure = MS_ReadPressure();
-    if (pressure != 0)
+    if (pressure)
         altitude = 44330.0f * (1.0f - powf((float)pressure / initialPressure, 0.1902949f));
 
-    voltage = HAL_ADC_GetValue(&hadc1) * ADCToVoltage;
+    voltage = HAL_ADC_GetValue(&hadc1) * ADCToVoltage * 11.f;
     HAL_ADC_Start(&hadc1);
     if (voltage < 11.1f && voltage > 10.f)
     {
@@ -105,34 +106,18 @@ inline void SENSOR_Update(void)
             char string[] = "low voltage, please return to base";
             ANO_Send_String(string, sizeof(string), RED);
         }
+        count++;
     }
 }
 
 /**
- * @brief read actual pressure from
- * @return uint32_t pressure value *100 mbar
+ * @brief caculate pressure from d1, d2
+ * @param D1 Digital pressure value
+ * @param D2 Digital temperature value
+ * @return int32_t pressure value *100 mbar
  */
-uint32_t MS_ReadPressure(void)
+static inline int32_t MS_CalculatePressure(uint32_t D1, uint32_t D2)
 {
-    static uint8_t state = 0;
-
-    uint32_t D1, D2;
-    switch (state)
-    {
-    case 0:
-        MS_WriteCMD(MS5611_CMD_CONV_D1 + MS5611_CMD_ADC_2048);
-        return 0;
-    case 1:
-        D1 = MS_ReadADC();
-        return 0;
-    case 2:
-        MS_WriteCMD(MS5611_CMD_CONV_D2 + MS5611_CMD_ADC_2048);
-        return 0;
-    case 3:
-        D2 = MS_ReadADC();
-        break;
-    }
-
     int32_t dT = D2 - (uint32_t)msPROM[5] * 256;
     int32_t TEMP = 2000 + ((int64_t)dT * msPROM[6]) / 8388608;
 
@@ -159,6 +144,42 @@ uint32_t MS_ReadPressure(void)
     SENS = SENS - SENS2;
 
     return (D1 * SENS / 2097152 - OFF) / 32768;
+}
+
+/**
+ * @brief read pressure from ms5611
+ * @return int32_t pressure value *100 mbar
+ */
+int32_t MS_ReadPressure(void)
+{
+    static uint8_t state = 0;
+    static uint32_t D1, D2;
+
+    int32_t pressure = 0;
+
+    switch (state)
+    {
+    case 0:
+        MS_WriteCMD(MS5611_CMD_CONV_D1 + MS5611_CMD_ADC_4096);
+        break;
+    case 2:
+        D1 = MS_ReadADC();
+        break;
+    case 4:
+        MS_WriteCMD(MS5611_CMD_CONV_D2 + MS5611_CMD_ADC_4096);
+        break;
+    case 6:
+        D2 = MS_ReadADC();
+        pressure = MS_CalculatePressure(D1, D2);
+        break;
+    default:
+        break;
+    }
+    state++;
+    if (state == 7)
+        state = 0;
+
+    return pressure;
 }
 
 /**
@@ -643,7 +664,7 @@ void HMC_Calibration(float *magbias, float *magscale)
 {
     int ii = 0;
     int32_t mag_bias[3] = {0, 0, 0}, mag_scale[3] = {0, 0, 0};
-    int16_t mag_max[3] = {-32767, -32767, -32767}, mag_min[3] = {32767, 32767, 32767}, mag_temp[3], mag_temppre[3];
+    int16_t mag_max[3] = {-32767, -32767, -32767}, mag_min[3] = {32767, 32767, 32767}, mag_temp[3], mag_pre[3] = {0};
 
     printf("Mag Calibration: Wave device in a figure eight until done!\n");
     HAL_Delay(1000);
@@ -652,6 +673,7 @@ void HMC_Calibration(float *magbias, float *magscale)
     {
         uint8_t status = 0;
         SENSOR_RegWriteByte(HMC5883L_ADDRESS, HMC5883L_MODE, 0X01);
+        HAL_Delay(7);
         SENSOR_RegReadBytes(HMC5883L_ADDRESS, HMC5883L_STATUS, 1, &status);
         if (status & 0x01)
         {
@@ -659,8 +681,8 @@ void HMC_Calibration(float *magbias, float *magscale)
             HMC_ReadMagRaw(mag_temp); // Read the mag data
             for (int jj = 0; jj < 3; jj++)
             {
-                mag_temp[jj] = mag_temppre[jj] * 0.8 + mag_temp[jj] * 0.2;
-                mag_temppre[jj] = mag_temp[jj];
+                mag_temp[jj] = mag_pre[jj] * 0.2 + mag_temp[jj] * 0.8;
+                mag_pre[jj] = mag_temp[jj];
                 if (mag_temp[jj] > mag_max[jj]) mag_max[jj] = mag_temp[jj];
                 if (mag_temp[jj] < mag_min[jj]) mag_min[jj] = mag_temp[jj];
             }
@@ -760,8 +782,15 @@ void MS_Init(void)
     MS_ReadPROM(msPROM);
     MS_CheckCRC(msPROM); // calculate checksum to ensure integrity of MS5611 calibration data
 
-    int64_t pressure = 0;
-    for (int i = 0; i < 100; i++)
+    // data in the begin have the problem
+    for (int i = 0; i < 175; i++)
+    {
+        MS_ReadPressure();
+        HAL_Delay(5);
+    }
+
+    uint64_t pressure = 0;
+    for (int i = 0; i < 175; i++)
     {
         pressure += MS_ReadPressure();
         HAL_Delay(5);

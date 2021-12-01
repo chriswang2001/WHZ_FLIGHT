@@ -22,7 +22,7 @@ extern "C" {
 #define CHANNEL_MAX 7
 
 /* Exported Variables --------------------------------------------------------*/
-extern volatile uint32_t rvalue[CHANNEL_MAX];
+extern uint32_t rvalue[CHANNEL_MAX];
 
 /* Exported functions prototypes ---------------------------------------------*/
 void REMOTE_Init(void);

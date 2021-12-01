@@ -18,9 +18,9 @@
 #define ARR_VALUE2 0xffffffff
 
 /* Variables -----------------------------------------------------------------*/
-bool rstate[CHANNEL_MAX];                                   // caputure state 0:now is low level 1:now is high level
-uint8_t ucount[CHANNEL_MAX];                                // update count
-volatile uint32_t rvalue[CHANNEL_MAX], pvalue[CHANNEL_MAX]; // caputre value and pre caputre value
+bool rstate[CHANNEL_MAX];                          // caputure state 0:now is low level 1:now is high level
+uint8_t ucount[CHANNEL_MAX];                       // update count
+uint32_t rvalue[CHANNEL_MAX], pvalue[CHANNEL_MAX]; // caputre value and pre caputre value
 
 /**
  * @brief Remote Controller Initialize
@@ -39,7 +39,7 @@ void REMOTE_Init(void)
     HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3);
 }
 
-const uint8_t TIM_CHANNEL[CHANNEL_MAX] = {
+const uint32_t TIM_CHANNEL[CHANNEL_MAX] = {
     TIM_CHANNEL_1,
     TIM_CHANNEL_2,
     TIM_CHANNEL_3,
@@ -49,7 +49,7 @@ const uint8_t TIM_CHANNEL[CHANNEL_MAX] = {
     TIM_CHANNEL_3,
 };
 
-const uint8_t TIM_FLAG[CHANNEL_MAX] = {
+const uint32_t TIM_FLAG[CHANNEL_MAX] = {
     TIM_FLAG_CC1,
     TIM_FLAG_CC2,
     TIM_FLAG_CC3,
@@ -72,8 +72,9 @@ static inline void TIM_CC_Handler(int8_t cc, TIM_HandleTypeDef *htim)
     if (rstate[cc]) // cpauture falling edge
     {
         uint32_t arr = (htim == &htim1) ? ARR_VALUE1 : ARR_VALUE2;
-
-        rvalue[cc] = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL[cc]) + arr * ucount[cc] - pvalue[cc];
+        uint32_t pwm = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL[cc]) + arr *ucount[cc] - pvalue[cc];
+        if(pwm > 950 && pwm < 2050)
+            rvalue[cc] = pwm;
         rstate[cc] = 0;
         TIM_RESET_CAPTUREPOLARITY(htim, TIM_CHANNEL[cc]);
         TIM_SET_CAPTUREPOLARITY(htim, TIM_CHANNEL[cc], TIM_ICPOLARITY_RISING);
@@ -163,6 +164,7 @@ void TIM2_IRQHandler(void)
             ucount[i]++;
         __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
 
+        OSIntExit(); /* Tell uC/OS-II that we are leaving the ISR            */
         return;
     }
 

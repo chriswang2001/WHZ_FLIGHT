@@ -136,7 +136,6 @@ void App_TaskDelHook(OS_TCB *ptcb)
 #if OS_VERSION >= 251
 void App_TaskIdleHook(void)
 {
-    OSPrioCur = 63;
 }
 #endif
 
@@ -195,8 +194,6 @@ void App_TaskReturnHook(OS_TCB *ptcb)
 #if OS_TASK_SW_HOOK_EN > 0
 void App_TaskSwHook(void)
 {
-    if (OSTCBHighRdy != OSTCBPrioTbl[OSPrioHighRdy])
-        OSTCBHighRdy = OSTCBPrioTbl[OSPrioHighRdy];
 }
 #endif
 

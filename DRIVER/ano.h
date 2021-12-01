@@ -32,7 +32,7 @@ uint8_t ANO_Send_Euler(uint8_t *data, float angle_rol, float angle_pit, float an
 uint8_t ANO_Send_Battery(uint8_t *data, float voltage, float current);
 uint8_t ANO_Send_PWM(uint8_t *data, uint16_t p1, uint16_t p2, uint16_t p3, uint16_t p4);
 uint8_t ANO_Send_Control(uint8_t *data, int16_t roll, int16_t pitch, int16_t thrust, int16_t yaw);
-uint8_t ANO_Send_Remote(uint8_t *data, int16_t *ch, uint8_t size);
+uint8_t ANO_Send_Remote(uint8_t *data, int16_t ch1, int16_t ch2, int16_t ch3, int16_t ch4, int16_t ch5, int16_t ch6, int16_t ch7, int16_t ch8, int16_t ch9, int16_t ch10);
 
 #ifdef __cplusplus
 }
