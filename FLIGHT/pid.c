@@ -25,8 +25,8 @@ arm_pid_instance_f32 PID_angle_roll = {
 };
 
 arm_pid_instance_f32 PID_rate_roll = {
-    .Kp = 0.5f,
-    .Ki = 0.1f,
+    .Kp = 2.3f,
+    .Ki = 0.01f,
     .Kd = 0.0f,
 };
 
@@ -54,8 +54,6 @@ arm_pid_instance_f32 PID_altitude = {
     .Kd = 0.0f,
 };
 
-const float PWMToAngle = MAX_ANGLE / 500.f;
-const float PWMToRate = MAX_Rate / 500.f;
 control_t rate_out;
 
 /**
@@ -74,29 +72,54 @@ void PID_Init(void)
     arm_pid_init_f32(&PID_altitude, 1);
 }
 
+static inline float PWM_TO_ANGLE(uint32_t pwm)
+{
+    return ((float)pwm - 1500) * MAX_ANGLE / 500.f;
+}
+
+float PID_Calculate(arm_pid_instance_f32 *S, float32_t in)
+{
+    float out = arm_pid_f32(S, in);
+
+    if(out > 1000)
+    {
+        out = 1000.f;
+        S->state[2] = out;
+    }
+    else if(out < -1000)
+    {
+        out = -1000.f;
+        S->state[2] = out;
+    }
+
+    return out;
+}
+
 /**
  * @brief update pid control, angle at 100Hz, rate at 200Hz
  */
 void PID_Upadte(void)
 {
+    if (MOTOR_LockCheck())
+        return;
+
     static uint8_t count = 0;
     static control_t set, angle_out;
 
-    set.roll = (rvalue[ROL] - 1500) * PWMToAngle;
-    set.pitch = (rvalue[PIT] - 1500) * PWMToAngle;
-    set.yaw = (rvalue[YAW] - 1500) * PWMToRate;
+    set.roll = PWM_TO_ANGLE(rvalue[ROL]);
+    set.pitch = PWM_TO_ANGLE(rvalue[PIT]);
+    set.yaw = PWM_TO_ANGLE(rvalue[YAW]);
     set.altitude = rvalue[THR];
 
     if (count % 2 == 0)
     {
-        angle_out.roll = arm_pid_f32(&PID_angle_roll, set.roll - attitude.angle.roll);
-        angle_out.pitch = arm_pid_f32(&PID_angle_pitch, set.pitch + attitude.angle.pitch);
+        angle_out.roll = PID_Calculate(&PID_angle_roll, set.roll - attitude.angle.roll);
+        angle_out.pitch = PID_Calculate(&PID_angle_pitch, set.pitch + attitude.angle.pitch);
     }
 
-    rate_out.roll = arm_pid_f32(&PID_rate_roll, angle_out.roll - gyro.axis.y);
-//    rate_out.roll = arm_pid_f32(&PID_rate_roll, 0);
-    rate_out.pitch = arm_pid_f32(&PID_rate_pitch, angle_out.pitch + gyro.axis.x);
-    rate_out.yaw = arm_pid_f32(&PID_rate_yaw, set.yaw + gyro.axis.z);
+    rate_out.roll = PID_Calculate(&PID_rate_roll, angle_out.roll - gyro.axis.y);
+    rate_out.pitch = PID_Calculate(&PID_rate_pitch, angle_out.pitch + gyro.axis.x);
+    rate_out.yaw = PID_Calculate(&PID_rate_yaw, set.yaw + gyro.axis.z);
     rate_out.altitude = set.altitude;
 
     count++;

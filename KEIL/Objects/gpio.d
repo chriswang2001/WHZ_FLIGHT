@@ -1,47 +1,26 @@
-.\objects\gpio.o: ..\HAL\gpio.c
-.\objects\gpio.o: ..\HAL\gpio.h
-.\objects\gpio.o: ..\APP\main.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal.h
-.\objects\gpio.o: ..\HAL\stm32f4xx_hal_conf.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_rcc.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_def.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f401xe.h
-.\objects\gpio.o: ..\LIB\Inc\core_cm4.h
-.\objects\gpio.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
-.\objects\gpio.o: ..\LIB\Inc\cmsis_version.h
-.\objects\gpio.o: ..\LIB\Inc\cmsis_compiler.h
-.\objects\gpio.o: ..\LIB\Inc\cmsis_armcc.h
-.\objects\gpio.o: ..\LIB\Inc\mpu_armv7.h
-.\objects\gpio.o: ..\LIB\Inc\system_stm32f4xx.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal.h
-.\objects\gpio.o: ..\LIB\Inc\Legacy/stm32_hal_legacy.h
-.\objects\gpio.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_rcc_ex.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_gpio.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_gpio_ex.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_exti.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_dma.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_dma_ex.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_cortex.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_adc.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_ll_adc.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_adc_ex.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_flash.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_flash_ex.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_flash_ramfunc.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_i2c.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_i2c_ex.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_pwr.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_pwr_ex.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_tim.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_tim_ex.h
-.\objects\gpio.o: ..\LIB\Inc\stm32f4xx_hal_uart.h
-.\objects\gpio.o: ..\DRIVER\sys.h
-.\objects\gpio.o: ..\uCOS\ucos_ii.h
-.\objects\gpio.o: ..\uCOS\app_cfg.h
-.\objects\gpio.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
-.\objects\gpio.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
-.\objects\gpio.o: ..\uCOS\os_cfg.h
-.\objects\gpio.o: ..\uCOS\os_cpu.h
-.\objects\gpio.o: ..\uCOS\os_trace.h
+./objects/gpio.o: ..\HAL\gpio.c ..\HAL\gpio.h ..\APP\main.h \
+  ..\LIB\Inc\stm32f4xx_hal.h ..\HAL\stm32f4xx_hal_conf.h \
+  ..\LIB\Inc\stm32f4xx_hal_rcc.h ..\LIB\Inc\stm32f4xx_hal_def.h \
+  ..\LIB\Inc\stm32f4xx.h ..\LIB\Inc\stm32f401xe.h ..\LIB\Inc\core_cm4.h \
+  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdint.h \
+  ..\LIB\Inc\cmsis_version.h ..\LIB\Inc\cmsis_compiler.h \
+  ..\LIB\Inc\cmsis_armclang.h \
+  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\arm_compat.h \
+  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\arm_acle.h \
+  ..\LIB\Inc\mpu_armv7.h ..\LIB\Inc\system_stm32f4xx.h \
+  ..\LIB\Inc\stm32f4xx_hal.h ..\LIB\Inc\Legacy\stm32_hal_legacy.h \
+  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stddef.h \
+  ..\LIB\Inc\stm32f4xx_hal_rcc_ex.h ..\LIB\Inc\stm32f4xx_hal_gpio.h \
+  ..\LIB\Inc\stm32f4xx_hal_gpio_ex.h ..\LIB\Inc\stm32f4xx_hal_exti.h \
+  ..\LIB\Inc\stm32f4xx_hal_dma.h ..\LIB\Inc\stm32f4xx_hal_dma_ex.h \
+  ..\LIB\Inc\stm32f4xx_hal_cortex.h ..\LIB\Inc\stm32f4xx_hal_adc.h \
+  ..\LIB\Inc\stm32f4xx_ll_adc.h ..\LIB\Inc\stm32f4xx_hal_adc_ex.h \
+  ..\LIB\Inc\stm32f4xx_hal_flash.h ..\LIB\Inc\stm32f4xx_hal_flash_ex.h \
+  ..\LIB\Inc\stm32f4xx_hal_flash_ramfunc.h \
+  ..\LIB\Inc\stm32f4xx_hal_i2c.h ..\LIB\Inc\stm32f4xx_hal_i2c_ex.h \
+  ..\LIB\Inc\stm32f4xx_hal_pwr.h ..\LIB\Inc\stm32f4xx_hal_pwr_ex.h \
+  ..\LIB\Inc\stm32f4xx_hal_tim.h ..\LIB\Inc\stm32f4xx_hal_tim_ex.h \
+  ..\LIB\Inc\stm32f4xx_hal_uart.h ..\DRIVER\sys.h ..\uCOS\ucos_ii.h \
+  ..\uCOS\app_cfg.h C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdarg.h \
+  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdio.h ..\uCOS\os_cfg.h \
+  ..\uCOS\os_cpu.h ..\uCOS\os_trace.h

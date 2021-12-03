@@ -724,7 +724,12 @@ void MPU_Init(void)
 {
     MPU_SelfTest();
     MPU_Calibrate(gyroBias.array, accelBias.array);
-
+    accelBias.array[0] = 0.016174f;
+    accelBias.array[1] = 0.016541f;
+    accelBias.array[2] = 0.082214f;
+    gyroBias.array[0] = -0.007634f;
+    gyroBias.array[1] = -0.603053f;
+    gyroBias.array[2] = 0.381619f;
     // wake up device-don't need this here if using calibration function below
     // SENSOR_RegWriteByte(MPU6050_ADDRESS, PWR_MGMT_1, 0x00); // Clear sleep mode bit (6), enable all sensors
     // HAL_Delay(100); // Delay 100 ms for PLL to get established on x-axis gyro; should check for PLL ready interrupt
