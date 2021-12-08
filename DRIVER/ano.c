@@ -21,10 +21,8 @@
 #define BYTE3(dwTemp) (*((char *)(&dwTemp) + 3))
 
 /* Variables -----------------------------------------------------------------*/
-// data to send
-uint8_t data[100];
-// param list
-void *ParamList[200];
+uint8_t data[100];    // data to send
+void *ParamList[200]; // param list stores param pointer
 
 /**
  * @brief Init param list and enable usart receive interrupt
@@ -196,7 +194,7 @@ uint8_t ANO_Send_Sensor2(uint8_t *data, int16_t m_x, int16_t m_y, int16_t m_z, i
     data[cnt++] = BYTE2(alt);
     data[cnt++] = BYTE3(alt);
 
-    int16_t temp = (int)tmp * 10;
+    int16_t temp = tmp * 10.f;
     data[cnt++] = BYTE0(temp);
     data[cnt++] = BYTE1(temp);
 
@@ -223,13 +221,13 @@ uint8_t ANO_Send_Euler(uint8_t *data, float angle_rol, float angle_pit, float an
     data[cnt++] = 7;
 
     uint16_t temp;
-    temp = (int)angle_rol * 100;
+    temp = angle_rol * 100.f;
     data[cnt++] = BYTE0(temp);
     data[cnt++] = BYTE1(temp);
-    temp = (int)angle_pit * 100;
+    temp = angle_pit * 100.f;
     data[cnt++] = BYTE0(temp);
     data[cnt++] = BYTE1(temp);
-    temp = (int)angle_yaw * 100;
+    temp = angle_yaw * 100.f;
     data[cnt++] = BYTE0(temp);
     data[cnt++] = BYTE1(temp);
 
@@ -238,6 +236,28 @@ uint8_t ANO_Send_Euler(uint8_t *data, float angle_rol, float angle_pit, float an
     ano_addcheck(data);
 
     return cnt + 2;
+}
+
+/**
+ * @brief  Send flight mode(0 stand for locked, 1stand for unlocked)
+ * @param data data to send
+ * @retval the length of data
+ */
+uint8_t ANO_Send_Mode(uint8_t *data, uint8_t mode, uint8_t lock)
+{
+    uint8_t cnt = 0;
+
+    data[cnt++] = 0xAA;
+    data[cnt++] = 0xAF;
+    data[cnt++] = 0x06;
+    data[cnt++] = 5;
+
+    data[cnt++] = mode;
+    data[cnt++] = lock;
+
+    ano_addcheck(data);
+
+    return cnt + 5;
 }
 
 /**
@@ -255,10 +275,10 @@ uint8_t ANO_Send_Battery(uint8_t *data, float voltage, float current)
     data[cnt++] = 4;
 
     uint16_t temp;
-    temp = (int)voltage * 100;
+    temp = voltage * 100.f;
     data[cnt++] = BYTE0(temp);
     data[cnt++] = BYTE1(temp);
-    temp = (int)current * 100;
+    temp = current * 100.f;
     data[cnt++] = BYTE0(temp);
     data[cnt++] = BYTE1(temp);
 

@@ -11,7 +11,6 @@
 #include "main.h"
 #include "ahrs.h"
 #include "ano.h"
-#include "motor.h"
 #include "pid.h"
 #include "remote.h"
 #include "sensor.h"
@@ -19,24 +18,11 @@
 #include "ucos_ii.h"
 #include "usart.h"
 
-/* Defines -------------------------------------------------------------------*/
-// START Task
-#define START_TASK_PRIO 10                                         // Set task priority, Start task has the lowest priority
-#define START_STK_SIZE 128                                         // Set task stack size
-__attribute__((aligned(8))) OS_STK START_TASK_STK[START_STK_SIZE]; // Task task stack
-void START_Task(void *pdata);                                      // Task function
-
-// ANO Task
-#define ANO_TASK_PRIO 9                                        // Set task priority
-#define ANO_STK_SIZE 128                                       // Set task stack size
-__attribute__((aligned(8))) OS_STK ANO_TASK_STK[ANO_STK_SIZE]; // Task task stack
-void ANO_Task(void *pdata);                                    // Task function
-
-// FLIGHT Task
-#define FLIGHT_TASK_PRIO 8                                           // Set task priority
-#define FLIGHT_STK_SIZE 256                                          // Set task stack size
-__attribute__((aligned(8))) OS_STK FLIGHT_TASK_STK[FLIGHT_STK_SIZE]; // Task task stack
-void FLIGHT_Task(void *pdata);                                       // Task function
+/* Variables -----------------------------------------------------------------*/
+// task stack alligned 8 to avoid printf float data error
+__attribute__((aligned(8))) OS_STK START_TASK_STK[START_STK_SIZE];
+__attribute__((aligned(8))) OS_STK ANO_TASK_STK[ANO_STK_SIZE];
+__attribute__((aligned(8))) OS_STK FLIGHT_TASK_STK[FLIGHT_STK_SIZE];
 
 /**
  * @brief The application entry point.
@@ -52,7 +38,7 @@ int main(void)
 }
 
 /**
- * @brief Start Task: sys init and create other tasks
+ * @brief Start Task: Create other tasks
  * @param pdata
  */
 void START_Task(void *pdata)
@@ -63,16 +49,17 @@ void START_Task(void *pdata)
     OS_CPU_SR cpu_sr;
 #endif
 
-    OS_ENTER_CRITICAL();                                                                                     // Enter critical area (close interrupt)
+    OS_ENTER_CRITICAL();
+    // using task creat extend to enable TASK_OPT_STK_CHK
     OSTaskCreateExt(ANO_Task, (void *)0, (OS_STK *)&ANO_TASK_STK[ANO_STK_SIZE - 1], ANO_TASK_PRIO, 1, &ANO_TASK_STK[0], ANO_STK_SIZE, (void *)0, OS_TASK_OPT_STK_CHK | OS_TASK_OPT_STK_CLR);                   // Create ANO Task
     OSTaskCreateExt(FLIGHT_Task, (void *)0, (OS_STK *)&FLIGHT_TASK_STK[FLIGHT_STK_SIZE - 1], FLIGHT_TASK_PRIO, 2, &FLIGHT_TASK_STK[0], FLIGHT_STK_SIZE, (void *)0, OS_TASK_OPT_STK_CHK | OS_TASK_OPT_STK_CLR); // Create FLIGHT Task
-    OS_EXIT_CRITICAL();                                                                                      // Exit critical area (open interrupt)
+    OS_EXIT_CRITICAL();
 
     OSTaskDel(START_TASK_PRIO); // Delete start task
 }
 
 /**
- * @brief ANO Taks: send necessary information to ano host
+ * @brief ANO Task: send necessary information to ano host
  * @param pdata
  */
 void ANO_Task(void *pdata)
@@ -81,7 +68,7 @@ void ANO_Task(void *pdata)
 
     static uint8_t count = 0;
     static uint8_t data[MAX_DATA_SIZE];
-    static const uint8_t sensor = 5, sensor2 = 7, euler = 1, battery = 50, pwm = 1, control = 1, remote = 6;
+    static const uint8_t sensor = 5, sensor2 = 7, euler = 1, mode = 8, battery = 50, pwm = 1, control = 1, remote = 6;
 
     while (1)
     {
@@ -91,9 +78,11 @@ void ANO_Task(void *pdata)
         if (count % sensor == 0)
             size += ANO_Send_Sensor(data + size, accel.axis.x * 1000, accel.axis.y * 1000, accel.axis.z * 1000, gyro.axis.x * 100, gyro.axis.y * 100, gyro.axis.z * 100);
         if (count % sensor2 == 0)
-            size += ANO_Send_Sensor2(data + size, mag.axis.x * 10, mag.axis.y * 10, mag.axis.z * 10, altitude * 100.f, 0);
+            size += ANO_Send_Sensor2(data + size, angle_out.roll, angle_out.pitch, angle_out.altitude, altitude * 100.f, temperature * 10);
         if (count % euler == 0)
             size += ANO_Send_Euler(data + size, attitude.angle.roll, attitude.angle.pitch, attitude.angle.yaw);
+        if (count % mode == 0)
+            size += ANO_Send_Mode(data + size, mode, mode > 1 ? 1 : mode);
         if (count % battery == 0)
             size += ANO_Send_Battery(data + size, voltage, OSCPUUsage);
         if (count % pwm == 0)
@@ -107,11 +96,11 @@ void ANO_Task(void *pdata)
             HAL_UART_Transmit_DMA(&huart2, data, size);
         else
         {
-            char string[] = "send data overflow";
+            char string[] = "Data Overflow";
             ANO_Send_String(string, sizeof(string), GREEN);
         }
 
-        OSTimeDly(10);
+        OSTimeDly(ANO_CYCLE_MS);
     }
 }
 
@@ -127,6 +116,6 @@ void FLIGHT_Task(void *pdata)
         AHRS_Update();
         PID_Upadte();
 
-        OSTimeDly(5);
+        OSTimeDly(FLIGHT_CYCLE_MS);
     }
 }

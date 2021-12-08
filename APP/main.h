@@ -1,8 +1,7 @@
 /**
  * @file main.h
  * @author Chris Wang (wang20011029@foxmail.com)
- * @brief Header for main.c file
- *        This file contains the common defines of the application
+ * @brief Header for main.c file containing the common defines and types of the application
  * @version 1.0
  * @date 2021-11-16
  * @copyright Copyright (c) 2021
@@ -21,6 +20,24 @@ extern "C" {
 #include "sys.h"
 #include "ucos_ii.h"
 
+/* Defines -------------------------------------------------------------------*/
+// START Task
+#define START_TASK_PRIO 10    // Set task priority, Start task has the lowest priority
+#define START_STK_SIZE 128    // Set task stack size
+void START_Task(void *pdata); // Task function
+
+// ANO Task
+#define ANO_TASK_PRIO 9     // Set task priority
+#define ANO_STK_SIZE 128    // Set task stack size
+#define ANO_CYCLE_MS 10     // Set task cycle
+void ANO_Task(void *pdata); // Task function
+
+// FLIGHT Task
+#define FLIGHT_TASK_PRIO 8     // Set task priority
+#define FLIGHT_STK_SIZE 256    // Set task stack size
+#define FLIGHT_CYCLE_MS 4      // Set task cycle
+void FLIGHT_Task(void *pdata); // Task function
+
 /* Exported types ------------------------------------------------------------*/
 /**
  * @brief Remote channel name
@@ -34,6 +51,18 @@ enum
     LOCK,
     LAND,
     MODE,
+};
+
+/**
+ * @brief Mode name
+ */
+enum
+{
+    LOCKED = 0,
+    STABILIZE,
+    ALTITUDE,
+    LOITER,
+    LANDING,
 };
 
 /**

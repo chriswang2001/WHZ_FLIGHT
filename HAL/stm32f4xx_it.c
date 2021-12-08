@@ -89,7 +89,6 @@ void HardFault_Handler(void)
     /* USER CODE BEGIN HardFault_IRQn 0 */
     while(1)
     {
-        MOTOR_Set(1000, 1000, 1000, 1000);
     }
     /* USER CODE END HardFault_IRQn 0 */
 }

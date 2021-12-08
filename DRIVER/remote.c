@@ -18,6 +18,7 @@
 #define ARR_VALUE2 0xffffffff
 
 /* Variables -----------------------------------------------------------------*/
+uint8_t mode;                                      // flight mode;
 bool rstate[CHANNEL_MAX];                          // caputure state 0:now is low level 1:now is high level
 uint8_t ucount[CHANNEL_MAX];                       // update count
 uint32_t rvalue[CHANNEL_MAX], pvalue[CHANNEL_MAX]; // caputre value and pre caputre value
@@ -72,9 +73,8 @@ static inline void TIM_CC_Handler(int8_t cc, TIM_HandleTypeDef *htim)
     if (rstate[cc]) // cpauture falling edge
     {
         uint32_t arr = (htim == &htim1) ? ARR_VALUE1 : ARR_VALUE2;
-        uint32_t pwm = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL[cc]) + arr *ucount[cc] - pvalue[cc];
-        if(pwm > 950 && pwm < 2050)
-            rvalue[cc] = pwm;
+        uint32_t pwm = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL[cc]) + arr * ucount[cc] - pvalue[cc];
+        rvalue[cc] = pwm < 900 ? rvalue[cc] : (pwm > 2100 ? rvalue[cc] : pwm);
         rstate[cc] = 0;
         TIM_RESET_CAPTUREPOLARITY(htim, TIM_CHANNEL[cc]);
         TIM_SET_CAPTUREPOLARITY(htim, TIM_CHANNEL[cc], TIM_ICPOLARITY_RISING);
@@ -179,7 +179,14 @@ void TIM2_IRQHandler(void)
 
     TIM_CC_Handler(cc, &htim2);
 
-    MOTOR_LockCheck();
+    mode = rvalue[MODE] < 1300 ? STABILIZE : (rvalue[MODE] < 1700 ? ALTITUDE : LOITER);
+    if (rvalue[LAND] > 1500)
+        mode = LANDING;
+    if (rvalue[LOCK] < 1500)
+    {
+        mode = LOCKED;
+        MOTOR_Locked();
+    }
 
     OSIntExit(); /* Tell uC/OS-II that we are leaving the ISR            */
 }

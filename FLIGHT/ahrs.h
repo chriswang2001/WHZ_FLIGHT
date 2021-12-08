@@ -21,6 +21,7 @@ extern "C" {
 
 /* Exported variable declerations --------------------------------------------*/
 extern EulerAngles attitude;
+extern const float sampleFreq;
 
 /* Exported functions prototypes ---------------------------------------------*/
 void AHRS_Update(void);

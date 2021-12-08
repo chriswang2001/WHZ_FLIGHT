@@ -10,15 +10,17 @@
 /* Includes ------------------------------------------------------------------*/
 #include "sensor.h"
 #include "adc.h"
+#include "ahrs.h"
 #include "ano.h"
 #include "arm_math.h"
+#include "filer.h"
 #include "i2c.h"
 #include <math.h>
 #include <stdio.h>
 
 /* Variables -----------------------------------------------------------------*/
 // full scale chose
-uint8_t Gscale = GFS_2000DPS;
+uint8_t Gscale = GFS_500DPS;
 uint8_t Ascale = AFS_8G;
 uint8_t Mscale = MFS_130Ga;
 
@@ -27,15 +29,15 @@ const float aRes[4] = {2.f / 32768.f, 4.f / 32768.f, 8.f / 32768.f, 16.f / 32768
 const float gRes[4] = {250.f / 32768.f, 500.f / 32768.f, 1000.f / 32768.f, 2000.f / 32768.f};
 const float mRes[8] = {1.f / 1.37f, 1.f / 1.09f, 1.f / 0.82f, 1.f / 0.66f, 1.f / 0.44f, 1.f / 0.39f, 1.f / 0.33f, 1.f / 0.23f};
 
-FloatVector3 accel, gyro, mag;                                                    // Stores the real sensor value in g's, degrees per second, milliGauss
-FloatVector3 accelBias, gyroBias, magBias, magScale = {.array = {1.f, 1.f, 1.f}}; // Offser and scale calibration for sensor in g's, degrees per second, milliGauss
-uint16_t msPROM[8];
-int32_t pressure;
-float altitude, voltage, initialPressure = 1.f;
-
 const float DegreeToRadian = PI / 180.f;
 const float RadianToDegree = 180.f / PI;
-const float ADCToVoltage = 3.3f / 4096.f;
+const float ADCToVoltage = 3.3f / 4095.f;
+
+FloatVector3 accel, gyro, mag;                                                    // Stores the real sensor value in g's, degrees per second, milliGauss
+FloatVector3 accelBias, gyroBias, magBias, magScale = {.array = {1.f, 1.f, 1.f}}; // Offser and scale calibration for sensor in g's, degrees per second, milliGauss
+float altitude, voltage, temperature;
+int32_t initialPressure = 1;
+uint16_t msPROM[8];
 
 /* Function prototypes -------------------------------------------------------*/
 void MPU_Init(void);
@@ -50,6 +52,9 @@ int32_t MS_ReadPressure(void);
 bool MS_WriteCMD(uint8_t cmd);
 uint32_t MS_ReadADC(void);
 
+#define GYRO_LPF_CUTOFF_FREQ 80.0f
+biquadFilter_t gyroFilterLPF[3]; //二阶低通滤波器
+
 /**
  * @brief sensor initialize including mpu hmc and ms
  */
@@ -59,12 +64,17 @@ void SENSOR_Init(void)
         HAL_Delay(100);
     MPU_Init();
 
-    if (HMC_Connect())
-        HMC_Init();
+    // if (HMC_Connect())
+    //     HMC_Init();
 
     MS_Init();
 
     HAL_ADC_Start(&hadc1);
+
+    for (int axis = 0; axis < 3; axis++)
+    {
+        biquadFilterInitLPF(&gyroFilterLPF[axis], sampleFreq, GYRO_LPF_CUTOFF_FREQ);
+    }
 }
 
 /**
@@ -73,6 +83,7 @@ void SENSOR_Init(void)
 void SENSOR_Update(void)
 {
     static Int16Vector3 accelCount, gyroCount, magCount; // Stores the 16-bit signed accelerometer, gyro, magnetometer sensor output
+    static int32_t pressure;
 
     MPU_ReadAccelRaw(accelCount.array); // Read the x/y/z adc values
     for (int i = 0; i < 3; i++)
@@ -86,11 +97,17 @@ void SENSOR_Update(void)
         gyro.array[i] = gyroCount.array[i] * gRes[Gscale] - gyroBias.array[i]; // Calculate the gyro value into actual degrees per second
     }
 
-    HMC_ReadMagRaw(magCount.array); // Read the x/y/z adc values
-    for (int i = 0; i < 3; i++)
-    {
-        mag.array[i] = magCount.array[i] * mRes[Mscale] * magScale.array[i] - magBias.array[i]; // Calculate the magnetometer values in milliGauss
-    }
+    //软件二阶低通滤波
+//    for (int axis = 0; axis < 3; axis++)
+//    {
+//        gyro.array[axis] = biquadFilterApply(&gyroFilterLPF[axis], gyro.array[axis]);
+//    }
+
+    // HMC_ReadMagRaw(magCount.array); // Read the x/y/z adc values
+    // for (int i = 0; i < 3; i++)
+    // {
+    //     mag.array[i] = magCount.array[i] * mRes[Mscale] * magScale.array[i] - magBias.array[i]; // Calculate the magnetometer values in milliGauss
+    // }
 
     pressure = MS_ReadPressure();
     if (pressure)
@@ -98,7 +115,7 @@ void SENSOR_Update(void)
 
     voltage = HAL_ADC_GetValue(&hadc1) * ADCToVoltage * 11.f;
     HAL_ADC_Start(&hadc1);
-    if (voltage < 11.1f && voltage > 10.f)
+    if (voltage < 10.5f && voltage > 8.5f)
     {
         static uint16_t count = 0;
         if (count % 1000 == 0)
@@ -120,6 +137,7 @@ static inline int32_t MS_CalculatePressure(uint32_t D1, uint32_t D2)
 {
     int32_t dT = D2 - (uint32_t)msPROM[5] * 256;
     int32_t TEMP = 2000 + ((int64_t)dT * msPROM[6]) / 8388608;
+    temperature = TEMP / 100.f;
 
     int64_t OFF = (int64_t)msPROM[2] * 65536 + (int64_t)msPROM[4] * dT / 128;
     int64_t SENS = (int64_t)msPROM[1] * 32768 + (int64_t)msPROM[3] * dT / 256;
@@ -152,7 +170,7 @@ static inline int32_t MS_CalculatePressure(uint32_t D1, uint32_t D2)
  */
 int32_t MS_ReadPressure(void)
 {
-    static uint8_t state = 0;
+    static uint8_t state = 0, count = 0;
     static uint32_t D1, D2;
 
     int32_t pressure = 0;
@@ -162,10 +180,8 @@ int32_t MS_ReadPressure(void)
     case 0:
         MS_WriteCMD(MS5611_CMD_CONV_D1 + MS5611_CMD_ADC_4096);
         break;
-    case 2:
+    case 3:
         D1 = MS_ReadADC();
-        break;
-    case 4:
         MS_WriteCMD(MS5611_CMD_CONV_D2 + MS5611_CMD_ADC_4096);
         break;
     case 6:
@@ -175,9 +191,11 @@ int32_t MS_ReadPressure(void)
     default:
         break;
     }
-    state++;
-    if (state == 7)
+
+    if (state == 6)
         state = 0;
+    else
+        state++;
 
     return pressure;
 }
@@ -724,12 +742,12 @@ void MPU_Init(void)
 {
     MPU_SelfTest();
     MPU_Calibrate(gyroBias.array, accelBias.array);
-    accelBias.array[0] = 0.016174f;
-    accelBias.array[1] = 0.016541f;
-    accelBias.array[2] = 0.082214f;
-    gyroBias.array[0] = -0.007634f;
-    gyroBias.array[1] = -0.603053f;
-    gyroBias.array[2] = 0.381619f;
+//    accelBias.array[0] = 0.016174f;
+//    accelBias.array[1] = 0.016541f;
+//    accelBias.array[2] = 0.082214f;
+//    gyroBias.array[0] = -0.007634f;
+//    gyroBias.array[1] = -0.603053f;
+//    gyroBias.array[2] = 0.381619f;
     // wake up device-don't need this here if using calibration function below
     // SENSOR_RegWriteByte(MPU6050_ADDRESS, PWR_MGMT_1, 0x00); // Clear sleep mode bit (6), enable all sensors
     // HAL_Delay(100); // Delay 100 ms for PLL to get established on x-axis gyro; should check for PLL ready interrupt
@@ -744,7 +762,7 @@ void MPU_Init(void)
     SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_CONFIG, 0x03);
 
     // Set sample rate = gyroscope output rate/(1 + SMPLRT_DIV)
-    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_SMPLRT_DIV, 0x04); // Use a 200 Hz rate; the same rate set in CONFIG above
+    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_SMPLRT_DIV, 0x00); // Use a 1000 Hz rate;
 
     // Set gyroscope full scale range
     // Range selects FS_SEL and AFS_SEL are 0 - 3, so 2-bit values are left-shifted into positions 4:3
@@ -787,18 +805,27 @@ void MS_Init(void)
     MS_ReadPROM(msPROM);
     MS_CheckCRC(msPROM); // calculate checksum to ensure integrity of MS5611 calibration data
 
-    // data in the begin have the problem
-    for (int i = 0; i < 175; i++)
+    // MS5611 needs a few readings to stabilize
+    for (int i = 0; i < 100; i++)
     {
         MS_ReadPressure();
-        HAL_Delay(5);
+        HAL_Delay(FLIGHT_CYCLE_MS);
     }
 
-    uint64_t pressure = 0;
-    for (int i = 0; i < 175; i++)
+    uint8_t count = 0;
+    int32_t pressure = 0;
+
+    while (count < 50)
     {
-        pressure += MS_ReadPressure();
-        HAL_Delay(5);
+        int32_t temp = MS_ReadPressure();
+        if (temp)
+        {
+            pressure += temp;
+            count++;
+        }
+
+        HAL_Delay(FLIGHT_CYCLE_MS);
     }
-    initialPressure = (float)pressure / 25.f;
+
+    initialPressure = (float)pressure / 50.f;
 }

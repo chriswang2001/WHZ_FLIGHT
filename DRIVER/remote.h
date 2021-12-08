@@ -23,6 +23,7 @@ extern "C" {
 
 /* Exported Variables --------------------------------------------------------*/
 extern uint32_t rvalue[CHANNEL_MAX];
+extern uint8_t mode;
 
 /* Exported functions prototypes ---------------------------------------------*/
 void REMOTE_Init(void);

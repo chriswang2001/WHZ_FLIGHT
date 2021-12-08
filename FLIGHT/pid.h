@@ -20,7 +20,7 @@ extern "C" {
 #include <arm_math.h>
 
 /* Defines -------------------------------------------------------------------*/
-#define MAX_ANGLE 35
+#define MAX_ANGLE 30
 
 /* Exported Variables --------------------------------------------------------*/
 extern arm_pid_instance_f32 PID_angle_roll;
@@ -29,7 +29,7 @@ extern arm_pid_instance_f32 PID_angle_pitch;
 extern arm_pid_instance_f32 PID_rate_pitch;
 extern arm_pid_instance_f32 PID_rate_yaw;
 extern arm_pid_instance_f32 PID_altitude;
-extern control_t rate_out;
+extern control_t rate_out, angle_out;
 
 /* Exported functions prototypes ---------------------------------------------*/
 void PID_Init(void);

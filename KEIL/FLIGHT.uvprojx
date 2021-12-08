@@ -473,6 +473,16 @@
               <FileType>5</FileType>
               <FilePath>..\FLIGHT\pid.h</FilePath>
             </File>
+            <File>
+              <FileName>filer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\FLIGHT\filer.c</FilePath>
+            </File>
+            <File>
+              <FileName>filer.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\FLIGHT\filer.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -482,11 +492,6 @@
               <FileName>stm32f4xx_hal_conf.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\HAL\stm32f4xx_hal_conf.h</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_msp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\stm32f4xx_hal_msp.c</FilePath>
             </File>
             <File>
               <FileName>adc.c</FileName>
@@ -557,6 +562,11 @@
               <FileName>stm32f4xx_it.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\HAL\stm32f4xx_it.h</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_hal_msp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HAL\stm32f4xx_hal_msp.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -659,9 +669,14 @@
           <GroupName>uCOS</GroupName>
           <Files>
             <File>
-              <FileName>ucos_ii.c</FileName>
+              <FileName>app_cfg.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\uCOS\app_cfg.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_hooks.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\UCOS\ucos_ii.c</FilePath>
+              <FilePath>..\uCOS\app_hooks.c</FilePath>
             </File>
             <File>
               <FileName>os_cpu_a.asm</FileName>
@@ -674,16 +689,6 @@
               <FilePath>..\uCOS\os_cpu_c.c</FilePath>
             </File>
             <File>
-              <FileName>app_cfg.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\uCOS\app_cfg.h</FilePath>
-            </File>
-            <File>
-              <FileName>app_hooks.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\uCOS\app_hooks.c</FilePath>
-            </File>
-            <File>
               <FileName>os_cfg.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\uCOS\os_cfg.h</FilePath>
@@ -692,6 +697,11 @@
               <FileName>os_dbg.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\uCOS\os_dbg.c</FilePath>
+            </File>
+            <File>
+              <FileName>ucos_ii.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\UCOS\ucos_ii.c</FilePath>
             </File>
           </Files>
         </Group>

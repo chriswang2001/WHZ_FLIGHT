@@ -21,19 +21,19 @@ extern "C" {
 #include <stdbool.h>
 
 /* Exported functions prototypes ---------------------------------------------*/
-void SENSOR_Update(void);
 void SENSOR_Init(void);
+void SENSOR_Update(void);
 
 void HMC_Calibration(float *magbias, float *magscale);
 
 /* Exported Variables --------------------------------------------------------*/
 extern FloatVector3 accel, gyro, mag;
 extern FloatVector3 magBias, magScale;
-extern float altitude, voltage;
+extern float altitude, voltage, temperature;
 extern const float DegreeToRadian, RadianToDegree, ADCToVoltage;
 
 /* Defines -------------------------------------------------------------------*/
-#define I2Cx_TIMEOUT 1000
+#define I2Cx_TIMEOUT 2
 
 enum Ascale
 {

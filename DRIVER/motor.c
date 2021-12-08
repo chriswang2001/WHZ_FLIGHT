@@ -46,30 +46,20 @@ void MOTOR_Set(uint16_t M1_PWM, uint16_t M2_PWM, uint16_t M3_PWM, uint16_t M4_PW
 }
 
 /**
- * @brief Lock motor when remote send lock value
- * @return true motor lock
- * @return false motor not lock
- */
-bool MOTOR_LockCheck(void)
-{
-    if (rvalue[LOCK] < 1500)
-    {
-        MOTOR_Set(1000, 1000, 1000, 1000);
-        return true;
-    }
-
-    return false;
-}
-
-/**
  * @brief Set motor rotaton rate by PID control
  * @param control control value caulated by PID controller
  */
 void MOTOR_Control(control_t *control)
 {
-    if (MOTOR_LockCheck())
-        return;
-
     float a = control->altitude, p = control->pitch, r = control->roll, y = control->yaw;
+
     MOTOR_Set(a - p + r + y, a - p - r - y, a + p - r + y, a + p + r - y);
+}
+
+/**
+ * @brief Lock motor by setting pwm to 1000
+ */
+void MOTOR_Locked(void)
+{
+    MOTOR_Set(1000, 1000, 1000, 1000);
 }
