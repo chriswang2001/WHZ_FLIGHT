@@ -21,6 +21,8 @@ extern "C" {
 
 /* Defines -------------------------------------------------------------------*/
 #define MAX_ANGLE 30
+#define MAX_RATE 50
+#define MAX_SPEED 1
 
 /* Exported Variables --------------------------------------------------------*/
 extern arm_pid_instance_f32 PID_angle_roll;
@@ -28,7 +30,7 @@ extern arm_pid_instance_f32 PID_rate_roll;
 extern arm_pid_instance_f32 PID_angle_pitch;
 extern arm_pid_instance_f32 PID_rate_pitch;
 extern arm_pid_instance_f32 PID_rate_yaw;
-extern arm_pid_instance_f32 PID_altitude;
+extern arm_pid_instance_f32 PID_speed_altitude;
 extern control_t rate_out, angle_out;
 
 /* Exported functions prototypes ---------------------------------------------*/

@@ -27,5 +27,5 @@
   C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\string.h \
   C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\math.h ..\FLIGHT\ahrs.h \
   ..\LIB\Inc\stm32f4xx.h ..\DRIVER\motor.h \
-  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdbool.h ..\DRIVER\remote.h \
-  ..\DRIVER\sensor.h
+  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdbool.h ..\FLIGHT\pos.h \
+  ..\DRIVER\remote.h ..\DRIVER\sensor.h

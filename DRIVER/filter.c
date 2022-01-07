@@ -8,13 +8,29 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include "filer.h"
+#include "filter.h"
+#include "ahrs.h"
 #include "arm_math.h"
 
 /* Defines -------------------------------------------------------------------*/
 #define BIQUAD_Q 1.0f / sqrtf(2.0f) /* quality factor - butterworth*/
+#define ACCEL_LPF_CUTOFF_FREQ 15.0f
+#define GYRO_LPF_CUTOFF_FREQ 80.0f
 
-//二阶滤波器
+biquadFilter_t accelFilterLPF[3];
+biquadFilter_t gyroFilterLPF[3];
+
+void biquadFilterInitLPF(biquadFilter_t *filter, uint16_t samplingFreq, uint16_t filterFreq);
+
+void FILTER_Init()
+{
+    for (int axis = 0; axis < 3; axis++)
+    {
+        biquadFilterInitLPF(&gyroFilterLPF[axis], sampleFreq, GYRO_LPF_CUTOFF_FREQ);
+        biquadFilterInitLPF(&accelFilterLPF[axis], sampleFreq, ACCEL_LPF_CUTOFF_FREQ);
+    }
+}
+
 void biquadFilterInit(biquadFilter_t *filter, uint16_t samplingFreq, uint16_t filterFreq, float Q, biquadFilterType_e filterType)
 {
     // Check for Nyquist frequency and if it's not possible to initialize filter as requested - set to no filtering at all
@@ -66,13 +82,11 @@ void biquadFilterInit(biquadFilter_t *filter, uint16_t samplingFreq, uint16_t fi
     filter->d1 = filter->d2 = 0;
 }
 
-//二阶低通滤波器
 void biquadFilterInitLPF(biquadFilter_t *filter, uint16_t samplingFreq, uint16_t filterFreq)
 {
     biquadFilterInit(filter, samplingFreq, filterFreq, BIQUAD_Q, FILTER_LPF);
 }
 
-// Computes a biquad_t filter on a sample
 float biquadFilterApply(biquadFilter_t *filter, float input)
 {
     const float result = filter->b0 * input + filter->d1;

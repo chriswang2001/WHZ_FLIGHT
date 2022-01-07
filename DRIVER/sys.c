@@ -18,6 +18,7 @@
 #include "pid.h"
 #include "remote.h"
 #include "sensor.h"
+#include "filter.h"
 #include "tim.h"
 #include "usart.h"
 #include <stdio.h>
@@ -49,6 +50,7 @@ void SYS_Init(void)
     MOTOR_Init();
     REMOTE_Init();
     SENSOR_Init();
+    FILTER_Init();
     PID_Init();
     ANO_Init();
 

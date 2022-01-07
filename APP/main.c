@@ -12,6 +12,7 @@
 #include "ahrs.h"
 #include "ano.h"
 #include "pid.h"
+#include "pos.h"
 #include "remote.h"
 #include "sensor.h"
 #include "tim.h"
@@ -68,7 +69,7 @@ void ANO_Task(void *pdata)
 
     static uint8_t count = 0;
     static uint8_t data[MAX_DATA_SIZE];
-    static const uint8_t sensor = 5, sensor2 = 7, euler = 1, mode = 8, battery = 50, pwm = 1, control = 1, remote = 6;
+    static const uint8_t sensor = 5, sensor2 = 7, euler = 1, flymode = 8, battery = 50, pwm = 1, control = 1, remote = 6;
 
     while (1)
     {
@@ -78,10 +79,10 @@ void ANO_Task(void *pdata)
         if (count % sensor == 0)
             size += ANO_Send_Sensor(data + size, accel.axis.x * 1000, accel.axis.y * 1000, accel.axis.z * 1000, gyro.axis.x * 100, gyro.axis.y * 100, gyro.axis.z * 100);
         if (count % sensor2 == 0)
-            size += ANO_Send_Sensor2(data + size, angle_out.roll, angle_out.pitch, angle_out.altitude, altitude * 100.f, temperature * 10);
+            size += ANO_Send_Sensor2(data + size, accelEarth.axis.z * 1000, vel.axis.y * 100, vel.axis.z * 100, altitude * 100.f, temperature * 10);
         if (count % euler == 0)
             size += ANO_Send_Euler(data + size, attitude.angle.roll, attitude.angle.pitch, attitude.angle.yaw);
-        if (count % mode == 0)
+        if (count % flymode == 0)
             size += ANO_Send_Mode(data + size, mode, mode > 1 ? 1 : mode);
         if (count % battery == 0)
             size += ANO_Send_Battery(data + size, voltage, OSCPUUsage);
@@ -90,7 +91,7 @@ void ANO_Task(void *pdata)
         if (count % control == 0)
             size += ANO_Send_Control(data + size, rate_out.roll, rate_out.pitch, rate_out.altitude, rate_out.yaw);
         if (count % remote == 0)
-            size += ANO_Send_Remote(data + size, rvalue[0], rvalue[1], rvalue[2], rvalue[3], rvalue[4], rvalue[5], rvalue[6], 0, 0, 0);
+            size += ANO_Send_Remote(data + size, rvalue[ROL], rvalue[PIT], rvalue[THR], rvalue[YAW], rvalue[LOCK], rvalue[LAND], rvalue[MODE], 0, 0, 0);
 
         if (size <= MAX_DATA_SIZE)
             HAL_UART_Transmit_DMA(&huart2, data, size);
@@ -105,7 +106,7 @@ void ANO_Task(void *pdata)
 }
 
 /**
- * @brief Flight Task: estimation of orientation and pid control
+ * @brief Flight Task: estimation of orientation position and pid control
  * @param pdata
  */
 void FLIGHT_Task(void *pdata)
@@ -114,6 +115,7 @@ void FLIGHT_Task(void *pdata)
     {
         SENSOR_Update();
         AHRS_Update();
+        POS_Update();
         PID_Upadte();
 
         OSTimeDly(FLIGHT_CYCLE_MS);

@@ -33,7 +33,7 @@ extern float altitude, voltage, temperature;
 extern const float DegreeToRadian, RadianToDegree, ADCToVoltage;
 
 /* Defines -------------------------------------------------------------------*/
-#define I2Cx_TIMEOUT 2
+#define I2Cx_TIMEOUT 1000
 
 enum Ascale
 {

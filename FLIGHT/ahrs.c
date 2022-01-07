@@ -18,7 +18,7 @@
 
 /* Variables -----------------------------------------------------------------*/
 EulerAngles attitude;
-const float sampleFreq = 1000.f / FLIGHT_CYCLE_MS;               // sample frequency in Hz
+const float sampleFreq = 1000.f / FLIGHT_CYCLE_MS;         // sample frequency in Hz
 volatile float beta = betaDef;                             // 2 * proportional gain (Kp)
 volatile float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f; // quaternion of sensor frame relative to auxiliary frame
 
@@ -34,7 +34,7 @@ static inline void QToEuler(void)
     const float q0q0MinusHalf = q0 * q0 - 0.5f; // calculate common terms to avoid repeated operations
 
     attitude.angle.roll = atan2f(q2 * q3 + q0 * q1, q0q0MinusHalf + q3 * q3) * RadianToDegree;
-    attitude.angle.pitch = -1.0f * arm_sin_f32(2.0f * (q1 * q3 - q0 * q2)) * RadianToDegree;
+    attitude.angle.pitch = -1.0f * asinf(2.0f * (q1 * q3 - q0 * q2)) * RadianToDegree;
     attitude.angle.yaw = atan2f(q1 * q2 + q0 * q3, q0q0MinusHalf + q1 * q1) * RadianToDegree;
 }
 

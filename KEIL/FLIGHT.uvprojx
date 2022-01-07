@@ -409,6 +409,16 @@
               <FilePath>..\DRIVER\ano.h</FilePath>
             </File>
             <File>
+              <FileName>filter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\DRIVER\filter.c</FilePath>
+            </File>
+            <File>
+              <FileName>filter.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\DRIVER\filter.h</FilePath>
+            </File>
+            <File>
               <FileName>motor.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\DRIVER\motor.c</FilePath>
@@ -474,14 +484,14 @@
               <FilePath>..\FLIGHT\pid.h</FilePath>
             </File>
             <File>
-              <FileName>filer.c</FileName>
+              <FileName>pos.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\FLIGHT\filer.c</FilePath>
+              <FilePath>..\FLIGHT\pos.c</FilePath>
             </File>
             <File>
-              <FileName>filer.h</FileName>
+              <FileName>pos.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\FLIGHT\filer.h</FilePath>
+              <FilePath>..\FLIGHT\pos.h</FilePath>
             </File>
           </Files>
         </Group>

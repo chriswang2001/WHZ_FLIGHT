@@ -28,4 +28,4 @@
   C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdbool.h ..\FLIGHT\pid.h \
   ..\LIB\Inc\arm_math.h C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\string.h \
   C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\math.h ..\DRIVER\remote.h \
-  ..\DRIVER\sensor.h ..\HAL\tim.h ..\HAL\usart.h
+  ..\DRIVER\sensor.h ..\DRIVER\filter.h ..\HAL\tim.h ..\HAL\usart.h

@@ -105,13 +105,13 @@ void TIM1_CC_IRQHandler(void)
     int8_t cc = -1;
 
     if (__HAL_TIM_GET_FLAG(&htim1, TIM_FLAG_CC1) != RESET)
-        cc = 0;
+        cc = ROL;
     else if (__HAL_TIM_GET_FLAG(&htim1, TIM_FLAG_CC2) != RESET)
-        cc = 1;
+        cc = PIT;
     else if (__HAL_TIM_GET_FLAG(&htim1, TIM_FLAG_CC3) != RESET)
-        cc = 2;
+        cc = THR;
     else if (__HAL_TIM_GET_FLAG(&htim1, TIM_FLAG_CC4) != RESET)
-        cc = 3;
+        cc = YAW;
     else
         HAL_TIM_IRQHandler(&htim1);
 
@@ -169,11 +169,11 @@ void TIM2_IRQHandler(void)
     }
 
     if (__HAL_TIM_GET_FLAG(&htim2, TIM_FLAG_CC1) != RESET)
-        cc = 4;
+        cc = LOCK;
     else if (__HAL_TIM_GET_FLAG(&htim2, TIM_FLAG_CC2) != RESET)
-        cc = 5;
+        cc = LAND;
     else if (__HAL_TIM_GET_FLAG(&htim2, TIM_FLAG_CC3) != RESET)
-        cc = 6;
+        cc = MODE;
     else
         HAL_TIM_IRQHandler(&htim2);
 

@@ -13,14 +13,14 @@
 #include "ahrs.h"
 #include "ano.h"
 #include "arm_math.h"
-#include "filer.h"
+#include "filter.h"
 #include "i2c.h"
 #include <math.h>
 #include <stdio.h>
 
 /* Variables -----------------------------------------------------------------*/
 // full scale chose
-uint8_t Gscale = GFS_500DPS;
+uint8_t Gscale = GFS_2000DPS;
 uint8_t Ascale = AFS_8G;
 uint8_t Mscale = MFS_130Ga;
 
@@ -51,9 +51,7 @@ void HMC_ReadMagRaw(int16_t *dest);
 int32_t MS_ReadPressure(void);
 bool MS_WriteCMD(uint8_t cmd);
 uint32_t MS_ReadADC(void);
-
-#define GYRO_LPF_CUTOFF_FREQ 80.0f
-biquadFilter_t gyroFilterLPF[3]; //二阶低通滤波器
+static bool SENSOR_RegWriteByte(uint8_t addr, uint8_t reg, uint8_t data);
 
 /**
  * @brief sensor initialize including mpu hmc and ms
@@ -61,7 +59,11 @@ biquadFilter_t gyroFilterLPF[3]; //二阶低通滤波器
 void SENSOR_Init(void)
 {
     while (!MPU_Connect())
+    {
+        SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_PWR_MGMT_1, 0x80); // reset mpu6050
         HAL_Delay(100);
+    }
+
     MPU_Init();
 
     // if (HMC_Connect())
@@ -70,11 +72,6 @@ void SENSOR_Init(void)
     MS_Init();
 
     HAL_ADC_Start(&hadc1);
-
-    for (int axis = 0; axis < 3; axis++)
-    {
-        biquadFilterInitLPF(&gyroFilterLPF[axis], sampleFreq, GYRO_LPF_CUTOFF_FREQ);
-    }
 }
 
 /**
@@ -91,17 +88,21 @@ void SENSOR_Update(void)
         accel.array[i] = accelCount.array[i] * aRes[Ascale] - accelBias.array[i]; // Calculate the accleration value into actual g's
     }
 
+    for (int i = 0; i < 3; i++)
+    {
+        accel.array[i] = biquadFilterApply(&accelFilterLPF[i], accel.array[i]);
+    }
+
     MPU_ReadGyroRaw(gyroCount.array); // Read the x/y/z adc values
     for (int i = 0; i < 3; i++)
     {
         gyro.array[i] = gyroCount.array[i] * gRes[Gscale] - gyroBias.array[i]; // Calculate the gyro value into actual degrees per second
     }
 
-    //软件二阶低通滤波
-//    for (int axis = 0; axis < 3; axis++)
-//    {
-//        gyro.array[axis] = biquadFilterApply(&gyroFilterLPF[axis], gyro.array[axis]);
-//    }
+    for (int axis = 0; axis < 3; axis++)
+    {
+        gyro.array[axis] = biquadFilterApply(&gyroFilterLPF[axis], gyro.array[axis]);
+    }
 
     // HMC_ReadMagRaw(magCount.array); // Read the x/y/z adc values
     // for (int i = 0; i < 3; i++)
@@ -111,9 +112,12 @@ void SENSOR_Update(void)
 
     pressure = MS_ReadPressure();
     if (pressure)
-        altitude = 44330.0f * (1.0f - powf((float)pressure / initialPressure, 0.1902949f));
+		{
+        altitude += (44330.0f * (1.0f - powf((float)pressure / initialPressure, 0.1902949f)) - altitude) * 0.3f;
+				altitude += 0.11f;
+		}
 
-    voltage = HAL_ADC_GetValue(&hadc1) * ADCToVoltage * 11.f;
+    voltage += (HAL_ADC_GetValue(&hadc1) * ADCToVoltage * 11.f - voltage) * 0.92f;
     HAL_ADC_Start(&hadc1);
     if (voltage < 10.5f && voltage > 8.5f)
     {
@@ -742,24 +746,36 @@ void MPU_Init(void)
 {
     MPU_SelfTest();
     MPU_Calibrate(gyroBias.array, accelBias.array);
-//    accelBias.array[0] = 0.016174f;
-//    accelBias.array[1] = 0.016541f;
-//    accelBias.array[2] = 0.082214f;
-//    gyroBias.array[0] = -0.007634f;
-//    gyroBias.array[1] = -0.603053f;
-//    gyroBias.array[2] = 0.381619f;
+
+    float aRMS, gRMS;
+    arm_rms_f32(accelBias.array, 3, &aRMS);
+    printf("aRMS:%f\n", aRMS);
+    arm_rms_f32(gyroBias.array, 3, &gRMS);
+    printf("gRMS:%f\n", gRMS);
+
+    if (aRMS > 0.01f)
+    {
+        accelBias.array[0] = 0.009827f;
+        accelBias.array[1] = 0.012085f;
+        accelBias.array[2] = 0.003174f;
+    }
+
+    if (gRMS > 1.0f)
+    {
+        gyroBias.array[0] = -1.511450f;
+        gyroBias.array[1] = -0.030534f;
+        gyroBias.array[2] = -0.778626f;
+    }
+
     // wake up device-don't need this here if using calibration function below
-    // SENSOR_RegWriteByte(MPU6050_ADDRESS, PWR_MGMT_1, 0x00); // Clear sleep mode bit (6), enable all sensors
+    // SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_PWR_MGMT_1, 0x00); // Clear sleep mode bit (6), enable all sensors
     // HAL_Delay(100); // Delay 100 ms for PLL to get established on x-axis gyro; should check for PLL ready interrupt
 
     // get stable time source
     SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_PWR_MGMT_1, 0x01); // Set clock source to be PLL with x-axis gyroscope reference, bits 2:0 = 001
 
-    // Configure Gyro and Accelerometer
-    // Disable FSYNC and set accelerometer and gyro bandwidth to 44 and 42 Hz, respectively;
-    // DLPF_CFG = bits 2:0 = 010; this sets the sample rate at 1 kHz for both
-    // Maximum delay time is 4.9 ms corresponding to just over 200 Hz sample rate
-    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_CONFIG, 0x03);
+    // Configure Gyro and Accelerometer not using filter in mpu6050 itself
+    SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_CONFIG, 0x00);
 
     // Set sample rate = gyroscope output rate/(1 + SMPLRT_DIV)
     SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_SMPLRT_DIV, 0x00); // Use a 1000 Hz rate;
@@ -806,7 +822,7 @@ void MS_Init(void)
     MS_CheckCRC(msPROM); // calculate checksum to ensure integrity of MS5611 calibration data
 
     // MS5611 needs a few readings to stabilize
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < 200; i++)
     {
         MS_ReadPressure();
         HAL_Delay(FLIGHT_CYCLE_MS);
