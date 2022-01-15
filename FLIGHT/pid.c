@@ -18,8 +18,10 @@
 #include "sensor.h"
 #include "stm32f4xx.h"
 
+/* Defines -------------------------------------------------------------------*/
+#define MAX_PID_OUTPUT 400.f
+
 /* Variables -----------------------------------------------------------------*/
-const float MAX_PID_OUTPUT = 400.f;
 control_t rate_out, angle_out, set;
 
 arm_pid_instance_f32 PID_angle_roll = {
@@ -49,6 +51,12 @@ arm_pid_instance_f32 PID_rate_pitch = {
 arm_pid_instance_f32 PID_rate_yaw = {
     .Kp = 7.0f,
     .Ki = 0.005f,
+    .Kd = 0.0f,
+};
+
+arm_pid_instance_f32 PID_speed_altitude = {
+    .Kp = 3.f,
+    .Ki = 0.001f,
     .Kd = 0.0f,
 };
 
@@ -82,12 +90,6 @@ arm_pid_instance_f32 PID_rate_yaw = {
 //     .Kd = 0.0f,
 // };
 
-arm_pid_instance_f32 PID_speed_altitude = {
-    .Kp = 3.f,
-    .Ki = 0.001f,
-    .Kd = 0.0f,
-};
-
 /**
  * @brief Init pid parameter
  */
@@ -104,18 +106,18 @@ void PID_Init(void)
     arm_pid_init_f32(&PID_speed_altitude, 1);
 }
 
-float PID_Calculate(arm_pid_instance_f32 *S, float32_t in)
+float PID_Calculate(arm_pid_instance_f32 *S, float32_t in, float max_output, float min_output)
 {
     float out = arm_pid_f32(S, in);
 
-    if (out > MAX_PID_OUTPUT)
+    if (out > max_output)
     {
-        out = MAX_PID_OUTPUT;
+        out = max_output;
         S->state[2] = out;
     }
-    else if (out < -MAX_PID_OUTPUT)
+    else if (out < min_output)
     {
-        out = -MAX_PID_OUTPUT;
+        out = min_output;
         S->state[2] = out;
     }
 
@@ -158,26 +160,26 @@ void PID_Upadte(void)
 
     if (count % 2 == 0)
     {
-        angle_out.roll = PID_Calculate(&PID_angle_roll, set.roll - attitude.angle.roll);
-        angle_out.pitch = PID_Calculate(&PID_angle_pitch, set.pitch + attitude.angle.pitch);
+        angle_out.roll = PID_Calculate(&PID_angle_roll, set.roll - attitude.angle.roll, MAX_PID_OUTPUT, -MAX_PID_OUTPUT);
+        angle_out.pitch = PID_Calculate(&PID_angle_pitch, set.pitch + attitude.angle.pitch, MAX_PID_OUTPUT, -MAX_PID_OUTPUT);
     }
 
-    rate_out.roll = PID_Calculate(&PID_rate_roll, angle_out.roll - gyro.axis.y);
-    rate_out.pitch = PID_Calculate(&PID_rate_pitch, angle_out.pitch + gyro.axis.x);
-    // rate_out.roll = PID_Calculate(&PID_rate_roll, set.roll - gyro.axis.y);
-    // rate_out.pitch = PID_Calculate(&PID_rate_pitch, set.pitch + gyro.axis.x);
-    rate_out.yaw = PID_Calculate(&PID_rate_yaw, set.yaw + gyro.axis.z);
+    rate_out.roll = PID_Calculate(&PID_rate_roll, angle_out.roll - gyro.axis.y, MAX_PID_OUTPUT, -MAX_PID_OUTPUT);
+    rate_out.pitch = PID_Calculate(&PID_rate_pitch, angle_out.pitch + gyro.axis.x, MAX_PID_OUTPUT, -MAX_PID_OUTPUT);
+    rate_out.yaw = PID_Calculate(&PID_rate_yaw, set.yaw + gyro.axis.z, MAX_PID_OUTPUT, -MAX_PID_OUTPUT);
+
     if (mode == ALTITUDE)
     {
         set.altitude = PWM_TO_SPEED(rvalue[THR]);
         PID_speed_altitude.state[2] = rate_out.altitude;
-        rate_out.altitude = PID_Calculate(&PID_speed_altitude, set.altitude - vel.axis.z);
+        rate_out.altitude = PID_Calculate(&PID_speed_altitude, (set.altitude - vel.axis.z) * 100.f, 1800.f, 1000.f);
     }
     else
+    {
         rate_out.altitude = rvalue[THR];
-
-    if (rate_out.altitude > 1800)
-        rate_out.altitude = 1800;
+        if (rate_out.altitude > 1800.f)
+            rate_out.altitude = 1800.f;
+    }
 
     count++;
 

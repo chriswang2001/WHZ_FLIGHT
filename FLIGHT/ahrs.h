@@ -21,7 +21,6 @@ extern "C" {
 
 /* Exported variable declerations --------------------------------------------*/
 extern EulerAngles attitude;
-extern const float sampleFreq;
 extern volatile float q0, q1, q2, q3;
 
 /* Exported functions prototypes ---------------------------------------------*/

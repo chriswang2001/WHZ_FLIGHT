@@ -24,7 +24,7 @@
   ..\uCOS\app_cfg.h C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdarg.h \
   C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdio.h ..\uCOS\os_cfg.h \
   ..\uCOS\os_cpu.h ..\uCOS\os_trace.h ..\FLIGHT\ahrs.h ..\APP\main.h \
-  ..\LIB\Inc\stm32f4xx.h ..\DRIVER\ano.h ..\FLIGHT\pid.h \
+  ..\LIB\Inc\stm32f4xx.h ..\DRIVER\ano.h ..\HAL\i2c.h ..\FLIGHT\pid.h \
   ..\LIB\Inc\arm_math.h C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\string.h \
   C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\math.h ..\FLIGHT\pos.h \
   ..\DRIVER\remote.h ..\DRIVER\sensor.h \

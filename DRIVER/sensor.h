@@ -33,7 +33,7 @@ extern float altitude, voltage, temperature;
 extern const float DegreeToRadian, RadianToDegree, ADCToVoltage;
 
 /* Defines -------------------------------------------------------------------*/
-#define I2Cx_TIMEOUT 1000
+#define I2Cx_TIMEOUT 5
 
 enum Ascale
 {
@@ -63,6 +63,7 @@ enum Mscale
     MFS_810Ga
 };
 
+#define Sea_Level_Pressure 101325.0f
 #define MPU6050_ADDRESS 0x68   // Device address when ADO = 0
 #define MPU6050_XGOFFS_TC 0x00 // Bit 7 PWR_MODE, bits 6:1 XG_OFFS_TC, bit 0 OTP_BNK_VLD
 #define MPU6050_YGOFFS_TC 0x01

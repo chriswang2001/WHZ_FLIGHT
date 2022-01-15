@@ -20,6 +20,10 @@ extern "C" {
 #include "sys.h"
 #include "ucos_ii.h"
 
+/* Exported Variables --------------------------------------------------------*/
+extern uint32_t deltaTick;
+extern float sampleFreq;
+
 /* Defines -------------------------------------------------------------------*/
 // START Task
 #define START_TASK_PRIO 10    // Set task priority, Start task has the lowest priority

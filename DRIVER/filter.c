@@ -17,20 +17,33 @@
 #define ACCEL_LPF_CUTOFF_FREQ 15.0f
 #define GYRO_LPF_CUTOFF_FREQ 80.0f
 
+/* Variables -----------------------------------------------------------------*/
 biquadFilter_t accelFilterLPF[3];
 biquadFilter_t gyroFilterLPF[3];
 
-void biquadFilterInitLPF(biquadFilter_t *filter, uint16_t samplingFreq, uint16_t filterFreq);
+/* Function prototypes -------------------------------------------------------*/
+void biquadFilterInit(biquadFilter_t *filter, uint16_t samplingFreq, uint16_t filterFreq, float Q, biquadFilterType_e filterType);
 
+/**
+ * @brief Filter Gain Initialize
+ */
 void FILTER_Init()
 {
     for (int axis = 0; axis < 3; axis++)
     {
-        biquadFilterInitLPF(&gyroFilterLPF[axis], sampleFreq, GYRO_LPF_CUTOFF_FREQ);
-        biquadFilterInitLPF(&accelFilterLPF[axis], sampleFreq, ACCEL_LPF_CUTOFF_FREQ);
+        biquadFilterInit(&gyroFilterLPF[axis], sampleFreq, GYRO_LPF_CUTOFF_FREQ, BIQUAD_Q, FILTER_LPF);
+        biquadFilterInit(&accelFilterLPF[axis], sampleFreq, ACCEL_LPF_CUTOFF_FREQ, BIQUAD_Q, FILTER_LPF);
     }
 }
 
+/**
+ * @brief Initialize Biquad Filter
+ * @param filter filter instance
+ * @param samplingFreq sample frequency
+ * @param filterFreq cut off frequency
+ * @param Q quality factor
+ * @param filterType lowpass or highpass
+ */
 void biquadFilterInit(biquadFilter_t *filter, uint16_t samplingFreq, uint16_t filterFreq, float Q, biquadFilterType_e filterType)
 {
     // Check for Nyquist frequency and if it's not possible to initialize filter as requested - set to no filtering at all
@@ -82,15 +95,17 @@ void biquadFilterInit(biquadFilter_t *filter, uint16_t samplingFreq, uint16_t fi
     filter->d1 = filter->d2 = 0;
 }
 
-void biquadFilterInitLPF(biquadFilter_t *filter, uint16_t samplingFreq, uint16_t filterFreq)
-{
-    biquadFilterInit(filter, samplingFreq, filterFreq, BIQUAD_Q, FILTER_LPF);
-}
-
+/**
+ * @brief filter sample data
+ * @param filter filter instance
+ * @param input sample data to filter
+ * @return float data after filtering
+ */
 float biquadFilterApply(biquadFilter_t *filter, float input)
 {
     const float result = filter->b0 * input + filter->d1;
     filter->d1 = filter->b1 * input - filter->a1 * result + filter->d2;
     filter->d2 = filter->b2 * input - filter->a2 * result;
+
     return result;
 }

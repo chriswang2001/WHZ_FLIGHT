@@ -18,7 +18,6 @@
 
 /* Variables -----------------------------------------------------------------*/
 EulerAngles attitude;
-const float sampleFreq = 1000.f / FLIGHT_CYCLE_MS;         // sample frequency in Hz
 volatile float beta = betaDef;                             // 2 * proportional gain (Kp)
 volatile float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f; // quaternion of sensor frame relative to auxiliary frame
 
@@ -43,6 +42,7 @@ static inline void QToEuler(void)
  */
 void AHRS_Update(void)
 {
+    sampleFreq = 1000.f / deltaTick; // sample frequency in Hz
     MadgwickAHRSupdate(gyro.axis.y, gyro.axis.x, -gyro.axis.z, -accel.axis.y, -accel.axis.x, accel.axis.z, 0, 0, 0);
     QToEuler();
 }

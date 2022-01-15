@@ -20,9 +20,9 @@ extern "C" {
 #include <arm_math.h>
 
 /* Defines -------------------------------------------------------------------*/
-#define MAX_ANGLE 30
-#define MAX_RATE 50
-#define MAX_SPEED 1
+#define MAX_ANGLE 30 // degree
+#define MAX_RATE 50  // degree per second
+#define MAX_SPEED 1  // m/s2
 
 /* Exported Variables --------------------------------------------------------*/
 extern arm_pid_instance_f32 PID_angle_roll;
