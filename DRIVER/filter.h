@@ -41,8 +41,9 @@ extern biquadFilter_t gyroFilterLPF[3];
 
 /* Exported functions prototypes ---------------------------------------------*/
 void FILTER_Init();
-float limitApply(float in, float min, float max);
-float deadBandApply(float input, float deadband);
+float flimitApply(float in, float min, float max);
+int32_t deadBandApply(int32_t input, int32_t deadband);
+float fdeadBandApply(float input, float deadband);
 float slidingFilterApply(float *buffer, float in, int size);
 float biquadFilterApply(biquadFilter_t *filter, float input);
 void biquadFilterInit(biquadFilter_t *filter, uint16_t samplingFreq, uint16_t filterFreq, float Q, biquadFilterType_e filterType);

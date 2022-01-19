@@ -79,7 +79,7 @@ static void AccelEarth_Cal(float ax, float ay, float az)
     accelCMSS.axis.z -= GRAVITY; //去除重力
     for (int axis = 0; axis < 3; axis++)
     {
-        accelCMSS.array[axis] = deadBandApply(accelCMSS.array[axis], 8);
+        accelCMSS.array[axis] = fdeadBandApply(accelCMSS.array[axis], 8);
         accelEarth.array[axis] += (accelCMSS.array[axis] - accelEarth.array[axis]) * 0.3f; //一阶低通
     }
 }

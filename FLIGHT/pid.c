@@ -24,40 +24,76 @@
 control_t rate_out, angle_out, set;
 
 PID_type PID_angle_roll = {
-    .kp = 2.4,
-    .ki = 0.0,
-    .kd = 0.0,
+    .kp = 2.4f,
+    .ki = 0.0f,
+    .kd = 0.0f,
 };
 
 PID_type PID_angle_pitch = {
-    .kp = 2.4,
-    .ki = 0.0,
-    .kd = 0.0,
+    .kp = 0.0f,
+    .ki = 0.0f,
+    .kd = 0.0f,
 };
 
 PID_type PID_rate_roll = {
-    .kp = 2.0,
-    .ki = 0.22,
-    .kd = 0.005,
+    .kp = 2.0f,
+    .ki = 0.22f,
+    .kd = 0.005f,
 };
 
 PID_type PID_rate_pitch = {
-    .kp = 2.0,
-    .ki = 0.22,
-    .kd = 0.005,
+    .kp = 0.0f,
+    .ki = 0.0f,
+    .kd = 0.0f,
 };
 
 PID_type PID_rate_yaw = {
-    .kp = 4.0,
-    .ki = 0.8,
-    .kd = 0.0,
+    .kp = 0.0f,
+    .ki = 0.0f,
+    .kd = 0.0f,
 };
 
 PID_type PID_speed_altitude = {
-    .kp = 3.f,
-    .ki = 0.001f,
+    .kp = 0.0f,
+    .ki = 0.0f,
     .kd = 0.0f,
 };
+
+// PID_type PID_angle_roll = {
+//     .kp = 2.4,
+//     .ki = 0.0,
+//     .kd = 0.0,
+// };
+
+// PID_type PID_angle_pitch = {
+//     .kp = 2.4,
+//     .ki = 0.0,
+//     .kd = 0.0,
+// };
+
+// PID_type PID_rate_roll = {
+//     .kp = 2.0,
+//     .ki = 0.22,
+//     .kd = 0.005,
+// };
+
+// PID_type PID_rate_pitch = {
+//     .kp = 2.0,
+//     .ki = 0.22,
+//     .kd = 0.005,
+// };
+
+// PID_type PID_rate_yaw = {
+//     .kp = 4.0,
+//     .ki = 0.8,
+//     .kd = 0.0,
+// };
+
+// PID_type PID_speed_altitude = {
+//     .kp = 3.f,
+//     .ki = 0.001f,
+//     .kd = 0.0f,
+// };
 
 /* Defines -------------------------------------------------------------------*/
 #define ANGLE_COUNT 2
@@ -148,14 +184,15 @@ float PID_Calculate(PID_type *pid, float32_t target, float state, float dt)
 {
     int iflag = 1;
     float output = 0.0f;
-
+    if (dt == 0)
+        dt = FLIGHT_CYCLE_MS;
     pid->error = target - state;
     pid->integ += pid->error * dt;
 
     //积分限幅
     if (pid->iLimit != 0)
     {
-        pid->integ = limitApply(pid->integ, -pid->iLimit, pid->iLimit);
+        pid->integ = flimitApply(pid->integ, -pid->iLimit, pid->iLimit);
     }
 
     pid->deriv = (pid->error - pid->prevError) / dt;
@@ -173,7 +210,7 @@ float PID_Calculate(PID_type *pid, float32_t target, float state, float dt)
     //输出限幅
     if (pid->oLimit != 0)
     {
-        output = limitApply(output, -pid->oLimit, pid->oLimit);
+        output = flimitApply(output, -pid->oLimit, pid->oLimit);
     }
 
     pid->prevError = pid->error;

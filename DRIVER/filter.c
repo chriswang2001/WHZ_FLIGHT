@@ -27,18 +27,42 @@ biquadFilter_t gyroFilterLPF[3];
  * @param max limit maximum
  * @return float data after filtering
  */
-float limitApply(float in, float min, float max)
+float flimitApply(float in, float min, float max)
 {
     return in < min ? min : (in > max ? max : in);
 }
 
 /**
- * @brief apply deadband
+ * @brief apply deadband int
+ * @param input sample data to filter
+ * @param deadband deadband value
+ * @return int32_t float data after filtering
+ */
+int32_t deadBandApply(int32_t input, int32_t deadband)
+{
+    if (abs(input) < deadband)
+    {
+        input = 0;
+    }
+    else if (input > 0)
+    {
+        input -= deadband;
+    }
+    else if (input < 0)
+    {
+        input += deadband;
+    }
+
+    return input;
+}
+
+/**
+ * @brief apply deadband to float
  * @param input sample data to filter
  * @param deadband deadband value
  * @return float data after filtering
  */
-float deadBandApply(float input, float deadband)
+float fdeadBandApply(float input, float deadband)
 {
     if ((float)fabs(input) < deadband)
     {
@@ -52,6 +76,7 @@ float deadBandApply(float input, float deadband)
     {
         input += deadband;
     }
+
     return input;
 }
 

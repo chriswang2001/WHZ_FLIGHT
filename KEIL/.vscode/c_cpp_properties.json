@@ -3,19 +3,19 @@
         {
             "name": "Target 1",
             "includePath": [
-                "d:\\workspace\\WHZ_FLIGHT - 副本 (2)\\uCOS",
-                "d:\\workspace\\WHZ_FLIGHT - 副本 (2)\\LIB\\Inc",
-                "d:\\workspace\\WHZ_FLIGHT - 副本 (2)\\HAL",
-                "d:\\workspace\\WHZ_FLIGHT - 副本 (2)\\APP",
-                "d:\\workspace\\WHZ_FLIGHT - 副本 (2)\\DRIVER",
-                "d:\\workspace\\WHZ_FLIGHT - 副本 (2)\\FLIGHT",
+                "d:\\workspace\\WHZ_FLIGHT\\uCOS",
+                "d:\\workspace\\WHZ_FLIGHT\\LIB\\Inc",
+                "d:\\workspace\\WHZ_FLIGHT\\HAL",
+                "d:\\workspace\\WHZ_FLIGHT\\APP",
+                "d:\\workspace\\WHZ_FLIGHT\\DRIVER",
+                "d:\\workspace\\WHZ_FLIGHT\\FLIGHT",
                 "C:\\Keil_v5\\ARM\\ARMCLANG\\include",
                 "C:\\Keil_v5\\ARM\\ARMCLANG\\include\\arm_linux",
                 "C:\\Keil_v5\\ARM\\ARMCLANG\\include\\arm_linux_compat",
                 "C:\\Keil_v5\\ARM\\ARMCLANG\\include\\libcxx",
-                "d:\\workspace\\WHZ_FLIGHT - 副本 (2)\\LIB",
-                "d:\\workspace\\WHZ_FLIGHT - 副本 (2)\\LIB\\Src",
-                "d:\\workspace\\WHZ_FLIGHT - 副本 (2)\\UCOS"
+                "d:\\workspace\\WHZ_FLIGHT\\LIB",
+                "d:\\workspace\\WHZ_FLIGHT\\LIB\\Src",
+                "d:\\workspace\\WHZ_FLIGHT\\UCOS"
             ],
             "defines": [
                 "USE_HAL_DRIVER",
