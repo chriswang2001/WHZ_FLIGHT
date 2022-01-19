@@ -89,6 +89,7 @@
         "main.h": "c",
         "stm32f4xx.h": "c",
         "string": "c",
-        "filer.h": "c"
+        "filer.h": "c",
+        "limits": "c"
     }
 }

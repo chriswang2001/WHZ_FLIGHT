@@ -12,13 +12,13 @@
 #include "adc.h"
 #include "ano.h"
 #include "dma.h"
+#include "filter.h"
 #include "gpio.h"
 #include "i2c.h"
 #include "motor.h"
 #include "pid.h"
 #include "remote.h"
 #include "sensor.h"
-#include "filter.h"
 #include "tim.h"
 #include "usart.h"
 #include <stdio.h>
@@ -65,7 +65,7 @@ void SYS_Init(void)
  */
 int fputc(int ch, FILE *f)
 {
-    HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, 1000);
+    HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, 5);
 
     return ch;
 }

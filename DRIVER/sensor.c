@@ -15,8 +15,13 @@
 #include "arm_math.h"
 #include "filter.h"
 #include "i2c.h"
+#include "usart.h"
 #include <math.h>
 #include <stdio.h>
+
+/* Defines -------------------------------------------------------------------*/
+// #define MAG_ENABLE
+#define MPU_TEMP
 
 /* Variables -----------------------------------------------------------------*/
 // full scale chose
@@ -29,158 +34,17 @@ const float aRes[4] = {2.f / 32768.f, 4.f / 32768.f, 8.f / 32768.f, 16.f / 32768
 const float gRes[4] = {250.f / 32768.f, 500.f / 32768.f, 1000.f / 32768.f, 2000.f / 32768.f};
 const float mRes[8] = {1.f / 1.37f, 1.f / 1.09f, 1.f / 0.82f, 1.f / 0.66f, 1.f / 0.44f, 1.f / 0.39f, 1.f / 0.33f, 1.f / 0.23f};
 
+// unit conversion
 const float DegreeToRadian = PI / 180.f;
 const float RadianToDegree = 180.f / PI;
 const float ADCToVoltage = 3.3f / 4095.f;
 
-FloatVector3 accel, gyro, mag;                                                    // Stores the real sensor value in g's, degrees per second, milliGauss
-FloatVector3 accelBias, gyroBias, magBias, magScale = {.array = {1.f, 1.f, 1.f}}; // Offser and scale calibration for sensor in g's, degrees per second, milliGauss
-float altitude, voltage, temperature;
-float initialAltitude;
+FloatVector3 accel, accelBias;                                    // Stores the real sensor value in g's
+FloatVector3 gyro, gyroBias;                                      // Stores the real sensor value in degrees per second
+FloatVector3 mag, magBias, magScale = {.array = {1.f, 1.f, 1.f}}; // Stores the real sensor value in milliGauss
+float altitude, initialAltitude;
+float voltage, temperature;
 uint16_t msPROM[8];
-
-/* Function prototypes -------------------------------------------------------*/
-void MPU_Init(void);
-bool MPU_Connect(void);
-void HMC_Init(void);
-bool HMC_Connect(void);
-void MS_Init(void);
-void MPU_ReadAccelRaw(int16_t *dest);
-void MPU_ReadGyroRaw(int16_t *dest);
-int16_t MPU_ReadTemp();
-void HMC_ReadMagRaw(int16_t *dest);
-int32_t MS_ReadPressure(void);
-bool MS_WriteCMD(uint8_t cmd);
-uint32_t MS_ReadADC(void);
-static bool SENSOR_RegWriteByte(uint8_t addr, uint8_t reg, uint8_t data);
-
-/**
- * @brief sensor initialize including mpu hmc and ms
- */
-void SENSOR_Init(void)
-{
-    if (!MPU_Connect())
-    {
-        HAL_I2C_DeInit(&hi2c1);                                         //释放IO口为GPIO，复位句柄状态标志
-        HAL_I2C_Init(&hi2c1);                                           //这句重新初始化I2C控制器
-        SENSOR_RegWriteByte(MPU6050_ADDRESS, MPU6050_PWR_MGMT_1, 0x80); // reset mpu6050
-        HAL_Delay(100);
-    }
-
-    MPU_Init();
-
-    // if (HMC_Connect())
-    //     HMC_Init();
-
-    MS_Init();
-
-    HAL_ADC_Start(&hadc1);
-}
-
-/**
- * @brief update sensor value accel gyro mag baro adc, running at 200Hz
- */
-void SENSOR_Update(void)
-{
-    static Int16Vector3 accelCount, gyroCount, magCount; // Stores the 16-bit signed accelerometer, gyro, magnetometer sensor output
-    static int32_t pressure;
-
-    MPU_ReadAccelRaw(accelCount.array); // Read the x/y/z adc values
-    for (int i = 0; i < 3; i++)
-    {
-        accel.array[i] = accelCount.array[i] * aRes[Ascale] - accelBias.array[i]; // Calculate the accleration value into actual g's
-        accel.array[i] = biquadFilterApply(&accelFilterLPF[i], accel.array[i]);
-    }
-
-    MPU_ReadGyroRaw(gyroCount.array); // Read the x/y/z adc values
-    for (int i = 0; i < 3; i++)
-    {
-        gyro.array[i] = gyroCount.array[i] * gRes[Gscale] - gyroBias.array[i]; // Calculate the gyro value into actual degrees per second
-        gyro.array[i] = biquadFilterApply(&gyroFilterLPF[i], gyro.array[i]);
-    }
-
-    temperature = MPU_ReadTemp() / 340.f + 36.53f;
-    // HMC_ReadMagRaw(magCount.array); // Read the x/y/z adc values
-    // for (int i = 0; i < 3; i++)
-    // {
-    //     mag.array[i] = magCount.array[i] * mRes[Mscale] * magScale.array[i] - magBias.array[i]; // Calculate the magnetometer values in milliGauss
-    // }
-
-    pressure = MS_ReadPressure();
-    altitude = 44330.0f * (1.0f - powf((float)pressure / Sea_Level_Pressure, 0.19025875190f)) - initialAltitude;
-
-    voltage += (HAL_ADC_GetValue(&hadc1) * ADCToVoltage * 11.f - voltage) * 0.92f;
-    HAL_ADC_Start(&hadc1);
-}
-
-/**
- * @brief caculate pressure from d1, d2
- * @param D1 Digital pressure value
- * @param D2 Digital temperature value
- * @return int32_t pressure value *100 mbar
- */
-static inline int32_t MS_CalculatePressure(uint32_t D1, uint32_t D2)
-{
-    int32_t dT = D2 - (uint32_t)msPROM[5] * 256;
-    int32_t TEMP = 2000 + ((int64_t)dT * msPROM[6]) / 8388608;
-    //    temperature = TEMP / 100.f;
-
-    int64_t OFF = (int64_t)msPROM[2] * 65536 + (int64_t)msPROM[4] * dT / 128;
-    int64_t SENS = (int64_t)msPROM[1] * 32768 + (int64_t)msPROM[3] * dT / 256;
-
-    int64_t OFF2 = 0, SENS2 = 0;
-
-    if (TEMP < 2000)
-    {
-        int64_t t = (TEMP - 2000) * (TEMP - 2000);
-        OFF2 = 5 * t / 2;
-        SENS2 = 5 * t / 4;
-    }
-
-    if (TEMP < -1500)
-    {
-        int64_t t = (TEMP + 1500) * (TEMP + 1500);
-        OFF2 = OFF2 + 7 * t;
-        SENS2 = SENS2 + 11 * t / 2;
-    }
-
-    OFF = OFF - OFF2;
-    SENS = SENS - SENS2;
-
-    return (D1 * SENS / 2097152 - OFF) / 32768;
-}
-
-/**
- * @brief read pressure from ms5611
- * @return int32_t pressure value *100 mbar
- */
-int32_t MS_ReadPressure(void)
-{
-    static uint8_t state = 0;
-    static uint32_t D1, D2;
-
-    switch (state)
-    {
-    case 0:
-        if (D1)
-            D2 = MS_ReadADC();
-        MS_WriteCMD(MS5611_CMD_CONV_D1 + MS5611_CMD_ADC_4096);
-        break;
-    case 3:
-        D1 = MS_ReadADC();
-        MS_WriteCMD(MS5611_CMD_CONV_D2 + MS5611_CMD_ADC_4096);
-        break;
-    case 5:
-        state = -1;
-    default:
-        break;
-    }
-    state++;
-
-    int32_t pressure = MS_CalculatePressure(D1, D2);
-
-    return pressure;
-}
 
 /**
  * @brief write a byte to targer sensor by I2C bus
@@ -193,8 +57,7 @@ static bool SENSOR_WriteByte(uint8_t addr, uint8_t data)
 {
     if (HAL_I2C_Master_Transmit(&hi2c1, addr << 1, &data, 1, I2Cx_TIMEOUT))
     {
-        HAL_I2C_DeInit(&hi2c1);
-        HAL_I2C_Init(&hi2c1);
+        I2C_Reset();
         return false;
     }
 
@@ -213,8 +76,7 @@ static bool SENSOR_RegWriteByte(uint8_t addr, uint8_t reg, uint8_t data)
 {
     if (HAL_I2C_Mem_Write(&hi2c1, addr << 1, reg, I2C_MEMADD_SIZE_8BIT, &data, 1, I2Cx_TIMEOUT))
     {
-        HAL_I2C_DeInit(&hi2c1);
-        HAL_I2C_Init(&hi2c1);
+        I2C_Reset();
         return false;
     }
 
@@ -234,8 +96,7 @@ static bool SENSOR_ReadBytes(uint8_t addr, uint8_t length, uint8_t *data)
 
     if (HAL_I2C_Master_Receive(&hi2c1, addr << 1, data, length, I2Cx_TIMEOUT))
     {
-        HAL_I2C_DeInit(&hi2c1);
-        HAL_I2C_Init(&hi2c1);
+        I2C_Reset();
         return false;
     }
 
@@ -255,8 +116,7 @@ static bool SENSOR_RegReadBytes(uint8_t addr, uint8_t reg, uint8_t length, uint8
 {
     if (HAL_I2C_Mem_Read(&hi2c1, addr << 1, reg, I2C_MEMADD_SIZE_8BIT, data, length, I2Cx_TIMEOUT))
     {
-        HAL_I2C_DeInit(&hi2c1);
-        HAL_I2C_Init(&hi2c1);
+        I2C_Reset();
         return false;
     }
 
@@ -298,6 +158,25 @@ int16_t MPU_ReadTemp()
     static uint8_t rawData[2];                                                // x/y/z gyro register data stored here
     SENSOR_RegReadBytes(MPU6050_ADDRESS, MPU6050_TEMP_OUT_H, 2, &rawData[0]); // Read the two raw data registers sequentially into data array
     return (int16_t)((rawData[0] << 8) | rawData[1]);                         // Turn the MSB and LSB into a 16-bit value
+}
+
+/**
+ * @brief read raw accelerometer temperature gyroscope data
+ * @param dest destination array to store data
+ */
+void MPU_ReadAllRaw(int16_t *accel, int16_t *temp, int16_t *gyro)
+{
+    static uint8_t rawData[14];
+    SENSOR_RegReadBytes(MPU6050_ADDRESS, MPU6050_ACCEL_XOUT_H, 14, &rawData[0]);
+    accel[0] = (int16_t)((rawData[0] << 8) | rawData[1]);
+    accel[1] = (int16_t)((rawData[2] << 8) | rawData[3]);
+    accel[2] = (int16_t)((rawData[4] << 8) | rawData[5]);
+
+    temp[0] = (int16_t)((rawData[6] << 8) | rawData[7]);
+
+    gyro[0] = (int16_t)((rawData[8] << 8) | rawData[9]);
+    gyro[1] = (int16_t)((rawData[10] << 8) | rawData[11]);
+    gyro[2] = (int16_t)((rawData[12] << 8) | rawData[13]);
 }
 
 /**
@@ -351,6 +230,107 @@ uint32_t MS_ReadADC(void)
     SENSOR_WriteByte(MS5611_ADDRESS, MS5611_CMD_ADC_READ);
     SENSOR_ReadBytes(MS5611_ADDRESS, 3, rawData);
     return (uint32_t)(rawData[0] << 16 | rawData[1] << 8 | rawData[2]);
+}
+
+/**
+ * @brief caculate pressure from d1, d2
+ * @param D1 Digital pressure value
+ * @param D2 Digital temperature value, set 0 to use temperature from mpu6050
+ * @return  int32_t pressure value *100 mbar
+ */
+static inline uint32_t MS_CalculatePressure(uint32_t D1, uint32_t D2)
+{
+    int32_t dT, TEMP;
+    if (D2)
+    {
+        dT = D2 - (uint32_t)msPROM[5] * 256;
+        TEMP = 2000 + ((int64_t)dT * msPROM[6]) / 8388608;
+        temperature = TEMP / 100.f;
+    }
+    else
+    {
+        TEMP = temperature * 100;
+        dT = ((int64_t)TEMP - 2000) * 8388608 / msPROM[6];
+    }
+
+    int64_t OFF = (int64_t)msPROM[2] * 65536 + (int64_t)msPROM[4] * dT / 128;
+    int64_t SENS = (int64_t)msPROM[1] * 32768 + (int64_t)msPROM[3] * dT / 256;
+
+    int64_t OFF2 = 0, SENS2 = 0;
+
+    if (TEMP < 2000)
+    {
+        int64_t t = (TEMP - 2000) * (TEMP - 2000);
+        OFF2 = 5 * t / 2;
+        SENS2 = 5 * t / 4;
+    }
+
+    if (TEMP < -1500)
+    {
+        int64_t t = (TEMP + 1500) * (TEMP + 1500);
+        OFF2 = OFF2 + 7 * t;
+        SENS2 = SENS2 + 11 * t / 2;
+    }
+
+    OFF = OFF - OFF2;
+    SENS = SENS - SENS2;
+
+    return (D1 * SENS / 2097152 - OFF) / 32768;
+}
+
+const int mscount = MS5611_ADC_4096_DELAY / FLIGHT_CYCLE_MS;
+/**
+ * @brief Calculate altitude from ms5611
+ * @return float altitude cm from sea level
+ */
+float MS_CalculateAltitude(void)
+{
+    static uint8_t state = 0;
+    static uint32_t P, D1, D2;
+    static float ALT, pressurebuffer[15];
+#ifdef MPU_TEMP
+    switch (state)
+    {
+    case 0:
+        MS_WriteCMD(MS5611_CMD_CONV_D1 + MS5611_CMD_ADC_4096);
+        break;
+    case mscount + 1:
+        D1 = MS_ReadADC();
+        P = slidingFilterApply(pressurebuffer, MS_CalculatePressure(D1, 0), sizeof(pressurebuffer) / sizeof(float));
+        ALT = 44330.0f * 100.f * (1.0f - powf((float)P / Sea_Level_Pressure, 0.19025875190f));
+#ifdef DEBUG_ENABLE
+        printf("d1:%d t:%.3f a:%.3f\n", D1, temperature, ALT);
+#endif
+        state = -1;
+        break;
+    default:
+        break;
+    }
+#else
+    switch (state)
+    {
+    case 0:
+        if (D1)
+        {
+            D2 = MS_ReadADC();
+            P = slidingFilterApply(pressurebuffer, MS_CalculatePressure(D1, D2), sizeof(pressurebuffer) / sizeof(float));
+            ALT = 44330.0f * 100.f * (1.0f - powf((float)P / Sea_Level_Pressure, 0.19025875190f));
+        }
+        MS_WriteCMD(MS5611_CMD_CONV_D1 + MS5611_CMD_ADC_4096);
+        break;
+    case mscount + 1:
+        D1 = MS_ReadADC();
+        MS_WriteCMD(MS5611_CMD_CONV_D2 + MS5611_CMD_ADC_4096);
+        break;
+    case 2 * mscount + 1:
+        state = -1;
+    default:
+        break;
+    }
+#endif
+
+    state++;
+    return ALT;
 }
 
 /**
@@ -758,20 +738,20 @@ void MPU_Init(void)
     arm_rms_f32(gyroBias.array, 3, &gRMS);
     printf("gRMS:%f\n", gRMS);
 
-    if (aRMS > 0.01f)
+    if (aRMS > 0.03f)
     {
         printf("using prepared accelBias\n");
-        accelBias.array[0] = 0.009827f;
-        accelBias.array[1] = 0.012085f;
-        accelBias.array[2] = 0.003174f;
+        accelBias.array[0] = 0.027039f;
+        accelBias.array[1] = -0.007324f;
+        accelBias.array[2] = 0.020325f;
     }
 
     if (gRMS > 1.0f)
     {
         printf("using prepared gyroBias\n");
-        gyroBias.array[0] = -1.511450f;
-        gyroBias.array[1] = -0.030534f;
-        gyroBias.array[2] = -0.778626f;
+        gyroBias.array[0] = -0.809160f;
+        gyroBias.array[1] = -0.236641f;
+        gyroBias.array[2] = -0.587786f;
     }
 
     // wake up device-don't need this here if using calibration function below
@@ -829,13 +809,91 @@ void MS_Init(void)
     MS_CheckCRC(msPROM); // calculate checksum to ensure integrity of MS5611 calibration data
 
     // MS5611 needs a few readings to stabilize
-    int32_t p;
-    for (int i = 0; i < 200; i++)
+    // for (int i = 0; i < 100.f * mscount; i++)
+    // {
+    //     temperature = (float)MPU_ReadTemp() / 340.f + 36.53f;
+    //     altitude = MS_CalculateAltitude();
+    //     HAL_Delay(FLIGHT_CYCLE_MS);
+    // }
+
+    // initialAltitude = altitude + 650;
+    // printf("initialAltitude:%.3f\n", initialAltitude);
+}
+
+/**
+ * @brief sensor initialize including mpu hmc and ms
+ */
+void SENSOR_Init(void)
+{
+    if (!MPU_Connect())
     {
-        p = MS_ReadPressure();
-        HAL_Delay(FLIGHT_CYCLE_MS);
+        I2C_Reset();
+        HAL_Delay(100);
     }
 
-    initialAltitude = 44330.0f * (1.0f - powf((float)p / Sea_Level_Pressure, 0.19025875190f));
-    printf("altitude:%.3f presssure:%d\n", initialAltitude, p);
+    MPU_Init();
+
+#ifdef MAG_ENABLE
+    if (HMC_Connect())
+        HMC_Init();
+#endif
+
+    MS_Init();
+
+    HAL_ADC_Start(&hadc1);
+}
+
+/**
+ * @brief update sensor value including accel, gyro, mag, baro, adc
+ */
+void SENSOR_Update(void)
+{
+    static Int16Vector3 accelCount, gyroCount, magCount; // Stores the 16-bit signed accelerometer, gyro, magnetometer sensor output
+    static int16_t temp, count;
+    static int32_t pressure;
+
+    MPU_ReadAllRaw(accelCount.array, &temp, gyroCount.array);
+    for (int axis = 0; axis < 3; axis++)
+    {
+        accel.array[axis] = accelCount.array[axis] * aRes[Ascale] - accelBias.array[axis]; // Calculate the accleration value into actual g's
+        accel.array[axis] = biquadFilterApply(&accelFilterLPF[axis], accel.array[axis]);
+
+        gyro.array[axis] = gyroCount.array[axis] * gRes[Gscale] - gyroBias.array[axis]; // Calculate the gyro value into actual degrees per second
+        gyro.array[axis] = biquadFilterApply(&gyroFilterLPF[axis], gyro.array[axis]);
+    }
+
+#ifdef MPU_TEMP
+    static float temperaturebuffer[20];
+    temperature = slidingFilterApply(temperaturebuffer, (float)temp / 340.f + 36.53f, sizeof(temperaturebuffer) / sizeof(float));
+#endif
+
+#ifdef MAG_ENABLE
+    HMC_ReadMagRaw(magCount.array); // Read the x/y/z adc values
+    for (int i = 0; i < 3; i++)
+    {
+        mag.array[i] = magCount.array[i] * mRes[Mscale] * magScale.array[i] - magBias.array[i]; // Calculate the magnetometer values in milliGauss
+    }
+#endif
+
+    if (count < 3000)
+    {
+        count++;
+        MS_CalculateAltitude();
+        altitude = 0.f;
+    }
+    else if (count == 3000)
+    {
+        count++;
+        initialAltitude = MS_CalculateAltitude();
+    }
+    else
+        altitude = MS_CalculateAltitude() - initialAltitude;
+
+#ifdef DEBUG_ENABLE
+    printf("a:%.3f\n", altitude);
+#endif
+
+    static float vlotagebuffer[20];
+    voltage = slidingFilterApply(vlotagebuffer, HAL_ADC_GetValue(&hadc1) * ADCToVoltage * 11.f, sizeof(vlotagebuffer) / sizeof(float));
+    HAL_ADC_Start(&hadc1);
 }

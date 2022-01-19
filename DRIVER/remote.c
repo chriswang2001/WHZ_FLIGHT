@@ -18,10 +18,9 @@
 #define ARR_VALUE2 0xffffffff
 
 /* Variables -----------------------------------------------------------------*/
-uint8_t mode;                                      // flight mode;
-bool rstate[CHANNEL_MAX];                          // caputure state 0:now is low level 1:now is high level
-uint8_t ucount[CHANNEL_MAX];                       // update count
-uint32_t rvalue[CHANNEL_MAX], pvalue[CHANNEL_MAX]; // caputre value and pre caputre value
+uint8_t flymode;                                                        // flight mode;
+bool rstate[CHANNEL_MAX];                                               // caputure state 0:now is low level 1:now is high level
+uint32_t rvalue[CHANNEL_MAX], pvalue[CHANNEL_MAX], ucount[CHANNEL_MAX]; // caputre value, pre caputre value, update count
 
 /**
  * @brief Remote Controller Initialize
@@ -179,12 +178,12 @@ void TIM2_IRQHandler(void)
 
     TIM_CC_Handler(cc, &htim2);
 
-    mode = rvalue[MODE] < 1300 ? STABILIZE : (rvalue[MODE] < 1700 ? ALTITUDE : LOITER);
+    flymode = rvalue[MODE] < 1300 ? STABILIZE : (rvalue[MODE] < 1700 ? ALTITUDE : LOITER);
     if (rvalue[LAND] > 1500)
-        mode = LANDING;
+        flymode = LANDING;
     if (rvalue[LOCK] < 1500)
     {
-        mode = LOCKED;
+        flymode = LOCKED;
         MOTOR_Locked();
     }
 

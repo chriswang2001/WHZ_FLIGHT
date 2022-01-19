@@ -1,4 +1,4 @@
-./objects/pid.o: ..\FLIGHT\pid.c ..\FLIGHT\pid.h ..\APP\main.h \
+./objects/pid.o: ..\FLIGHT\pid.c ..\FLIGHT\pid.h ..\DRIVER\filter.h \
   ..\LIB\Inc\stm32f4xx_hal.h ..\HAL\stm32f4xx_hal_conf.h \
   ..\LIB\Inc\stm32f4xx_hal_rcc.h ..\LIB\Inc\stm32f4xx_hal_def.h \
   ..\LIB\Inc\stm32f4xx.h ..\LIB\Inc\stm32f401xe.h ..\LIB\Inc\core_cm4.h \
@@ -20,12 +20,14 @@
   ..\LIB\Inc\stm32f4xx_hal_i2c.h ..\LIB\Inc\stm32f4xx_hal_i2c_ex.h \
   ..\LIB\Inc\stm32f4xx_hal_pwr.h ..\LIB\Inc\stm32f4xx_hal_pwr_ex.h \
   ..\LIB\Inc\stm32f4xx_hal_tim.h ..\LIB\Inc\stm32f4xx_hal_tim_ex.h \
-  ..\LIB\Inc\stm32f4xx_hal_uart.h ..\DRIVER\sys.h ..\uCOS\ucos_ii.h \
-  ..\uCOS\app_cfg.h C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdarg.h \
-  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdio.h ..\uCOS\os_cfg.h \
-  ..\uCOS\os_cpu.h ..\uCOS\os_trace.h ..\LIB\Inc\arm_math.h \
+  ..\LIB\Inc\stm32f4xx_hal_uart.h ..\LIB\Inc\arm_math.h \
   C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\string.h \
-  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\math.h ..\FLIGHT\ahrs.h \
-  ..\LIB\Inc\stm32f4xx.h ..\DRIVER\motor.h \
-  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdbool.h ..\FLIGHT\pos.h \
-  ..\DRIVER\remote.h ..\DRIVER\sensor.h
+  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\math.h ..\APP\main.h \
+  ..\DRIVER\sys.h ..\uCOS\ucos_ii.h ..\uCOS\app_cfg.h \
+  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdarg.h \
+  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdio.h ..\uCOS\os_cfg.h \
+  ..\uCOS\os_cpu.h ..\uCOS\os_trace.h \
+  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdbool.h ..\FLIGHT\ahrs.h \
+  ..\LIB\Inc\stm32f4xx.h ..\DRIVER\motor.h ..\FLIGHT\pos.h \
+  ..\DRIVER\remote.h ..\DRIVER\sensor.h \
+  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdlib.h

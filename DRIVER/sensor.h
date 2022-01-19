@@ -209,6 +209,7 @@ enum Mscale
 #define MS5611_CMD_ADC_1024 0x04 // ADC OSR=1024
 #define MS5611_CMD_ADC_2048 0x06 // ADC OSR=2048
 #define MS5611_CMD_ADC_4096 0x08 // ADC OSR=4096
+#define MS5611_ADC_4096_DELAY 15
 
 #ifdef __cplusplus
 }

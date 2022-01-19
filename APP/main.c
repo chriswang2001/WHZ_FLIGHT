@@ -21,11 +21,11 @@
 #include "usart.h"
 
 /* Defines -------------------------------------------------------------------*/
-#define ANO_SEND
+#define ANO_MAX_SIZE 300 // maximum size to send
 
 /* Variables -----------------------------------------------------------------*/
-uint32_t deltaTick;                          // tick between two flight task
-float sampleFreq = 1000.f / FLIGHT_CYCLE_MS; // flight task frequency in Hz
+uint32_t deltaTick;                          // tick between two flight task in ms
+float freqFlight = 1000.f / FLIGHT_CYCLE_MS; // flight task frequency in Hz
 
 // task stack alligned 8 to avoid printf float data error
 __attribute__((aligned(8))) OS_STK START_TASK_STK[START_STK_SIZE];
@@ -40,20 +40,20 @@ int main(void)
 {
     SYS_Init();
 
-    OSInit();                                                                                            // uCOS initialization
-    OSTaskCreate(START_Task, (void *)0, (OS_STK *)&START_TASK_STK[START_STK_SIZE - 1], START_TASK_PRIO); // Create start task
-    OSStart();                                                                                           // Start task
+    OSInit();
+    OSTaskCreate(START_Task, (void *)0, (OS_STK *)&START_TASK_STK[START_STK_SIZE - 1], START_TASK_PRIO);
+    OSStart();
 }
 
 /**
- * @brief Start Task: Create other tasks
+ * @brief Start Task: Create tasks
  * @param pdata
  */
 void START_Task(void *pdata)
 {
     OSStatInit(); // Open statistics task
 
-#if OS_CRITICAL_METHOD == 3u /* Allocate storage for CPU status register             */
+#if OS_CRITICAL_METHOD == 3u
     OS_CPU_SR cpu_sr;
 #endif
 
@@ -63,7 +63,7 @@ void START_Task(void *pdata)
     OSTaskCreateExt(FLIGHT_Task, (void *)0, (OS_STK *)&FLIGHT_TASK_STK[FLIGHT_STK_SIZE - 1], FLIGHT_TASK_PRIO, 2, &FLIGHT_TASK_STK[0], FLIGHT_STK_SIZE, (void *)0, OS_TASK_OPT_STK_CHK | OS_TASK_OPT_STK_CLR); // Create FLIGHT Task
     OS_EXIT_CRITICAL();
 
-    OSTaskDel(START_TASK_PRIO); // Delete start task
+    OSTaskDel(START_TASK_PRIO);
 }
 
 /**
@@ -72,11 +72,7 @@ void START_Task(void *pdata)
  */
 void ANO_Task(void *pdata)
 {
-#define MAX_DATA_SIZE 300
-
     static uint8_t count = 0;
-    static uint8_t data[MAX_DATA_SIZE];
-    static const uint8_t sensor = 5, sensor2 = 7, euler = 1, flymode = 8, battery = 50, pwm = 1, control = 1, remote = 6;
 
     while (1)
     {
@@ -92,14 +88,20 @@ void ANO_Task(void *pdata)
 
 #ifdef ANO_SEND
         uint16_t size = 0;
+        static uint8_t data[ANO_MAX_SIZE];
+        static const uint8_t sensor = 5, sensor2 = 7, euler = 1, mode = 8, battery = 50, pwm = 1, control = 2, remote = 6;
+
         if (count % sensor == 0)
             size += ANO_Send_Sensor(data + size, accel.axis.x * 1000, accel.axis.y * 1000, accel.axis.z * 1000, gyro.axis.x * 100, gyro.axis.y * 100, gyro.axis.z * 100);
         if (count % sensor2 == 0)
-            size += ANO_Send_Sensor2(data + size, accelEarth.axis.z * 100, vel.axis.z * 100, pos.axis.z * 100, altitude * 100, temperature * 10);
+            size += ANO_Send_Sensor2(data + size, accelEarth.axis.z, vel.axis.z, pos.axis.z, altitude, temperature);
         if (count % euler == 0)
+        {
             size += ANO_Send_Euler(data + size, attitude.angle.roll, attitude.angle.pitch, attitude.angle.yaw);
-        if (count % flymode == 0)
-            size += ANO_Send_Mode(data + size, mode, mode > 1 ? 1 : mode);
+            size += ANO_Send_Target(data + size, set.roll, set.pitch, set.yaw);
+        }
+        if (count % mode == 0)
+            size += ANO_Send_Mode(data + size, flymode, flymode > 1 ? 1 : flymode);
         if (count % battery == 0)
             size += ANO_Send_Battery(data + size, voltage, OSCPUUsage);
         if (count % pwm == 0)
@@ -109,7 +111,7 @@ void ANO_Task(void *pdata)
         if (count % remote == 0)
             size += ANO_Send_Remote(data + size, rvalue[ROL], rvalue[PIT], rvalue[THR], rvalue[YAW], rvalue[LOCK], rvalue[LAND], rvalue[MODE], 0, 0, 0);
 
-        if (size <= MAX_DATA_SIZE)
+        if (size <= ANO_MAX_SIZE)
             HAL_UART_Transmit_DMA(&huart2, data, size);
         else
         {
@@ -127,7 +129,9 @@ void ANO_Task(void *pdata)
  */
 void FLIGHT_Task(void *pdata)
 {
-    uint32_t tickstart = HAL_GetTick();
+    static uint32_t tickstart;
+    tickstart = HAL_GetTick();
+
     while (1)
     {
         SENSOR_Update();

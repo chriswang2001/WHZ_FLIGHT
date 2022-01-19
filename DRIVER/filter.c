@@ -1,7 +1,7 @@
 /**
  * @file filer.c
  * @author Chris Wang (wang20011029@foxmail.com)
- * @brief
+ * @brief digital data filter
  * @version 1.0
  * @date 2021-12-05
  * @copyright Copyright (c) 2021
@@ -13,7 +13,6 @@
 #include "arm_math.h"
 
 /* Defines -------------------------------------------------------------------*/
-#define BIQUAD_Q 1.0f / sqrtf(2.0f) /* quality factor - butterworth*/
 #define ACCEL_LPF_CUTOFF_FREQ 15.0f
 #define GYRO_LPF_CUTOFF_FREQ 80.0f
 
@@ -21,19 +20,89 @@
 biquadFilter_t accelFilterLPF[3];
 biquadFilter_t gyroFilterLPF[3];
 
-/* Function prototypes -------------------------------------------------------*/
-void biquadFilterInit(biquadFilter_t *filter, uint16_t samplingFreq, uint16_t filterFreq, float Q, biquadFilterType_e filterType);
+/**
+ * @brief limit value
+ * @param in sample data to filter
+ * @param min limit minimum
+ * @param max limit maximum
+ * @return float data after filtering
+ */
+float limitApply(float in, float min, float max)
+{
+    return in < min ? min : (in > max ? max : in);
+}
 
 /**
- * @brief Filter Gain Initialize
+ * @brief apply deadband
+ * @param input sample data to filter
+ * @param deadband deadband value
+ * @return float data after filtering
  */
-void FILTER_Init()
+float deadBandApply(float input, float deadband)
 {
-    for (int axis = 0; axis < 3; axis++)
+    if ((float)fabs(input) < deadband)
     {
-        biquadFilterInit(&gyroFilterLPF[axis], sampleFreq, GYRO_LPF_CUTOFF_FREQ, BIQUAD_Q, FILTER_LPF);
-        biquadFilterInit(&accelFilterLPF[axis], sampleFreq, ACCEL_LPF_CUTOFF_FREQ, BIQUAD_Q, FILTER_LPF);
+        input = 0;
     }
+    else if (input > 0)
+    {
+        input -= deadband;
+    }
+    else if (input < 0)
+    {
+        input += deadband;
+    }
+    return input;
+}
+
+/**
+ * @brief sliding window filter also kown as moving average filter
+ * @param buffer slide window buffer
+ * @param input sample data to filter
+ * @param size sizeof slide window
+ * @return float data after filtering
+ */
+float slidingFilterApply(float *buffer, float input, int size)
+{
+    // check if buffer is initialized
+    if (buffer[0])
+    {
+        float filter_sum = 0;
+        for (int i = 1; i < size - 1; i++)
+        {
+            buffer[i] = buffer[i + 1];
+            filter_sum += buffer[i];
+        }
+        buffer[size - 1] = input;
+        filter_sum += buffer[size - 1];
+
+        return (filter_sum / ((float)size - 1));
+    }
+    else
+    {
+        buffer[0] = 1.f;
+        for (int i = 1; i < size; i++)
+        {
+            buffer[i] = input;
+        }
+
+        return input;
+    }
+}
+
+/**
+ * @brief biquad IIR filter
+ * @param filter filter instance
+ * @param input sample data to filter
+ * @return float data after filtering
+ */
+float biquadFilterApply(biquadFilter_t *filter, float input)
+{
+    const float result = filter->b0 * input + filter->d1;
+    filter->d1 = filter->b1 * input - filter->a1 * result + filter->d2;
+    filter->d2 = filter->b2 * input - filter->a2 * result;
+
+    return result;
 }
 
 /**
@@ -96,16 +165,13 @@ void biquadFilterInit(biquadFilter_t *filter, uint16_t samplingFreq, uint16_t fi
 }
 
 /**
- * @brief filter sample data
- * @param filter filter instance
- * @param input sample data to filter
- * @return float data after filtering
+ * @brief Filter Gain Initialize
  */
-float biquadFilterApply(biquadFilter_t *filter, float input)
+void FILTER_Init()
 {
-    const float result = filter->b0 * input + filter->d1;
-    filter->d1 = filter->b1 * input - filter->a1 * result + filter->d2;
-    filter->d2 = filter->b2 * input - filter->a2 * result;
-
-    return result;
+    for (int axis = 0; axis < 3; axis++)
+    {
+        biquadFilterInit(&gyroFilterLPF[axis], freqFlight, GYRO_LPF_CUTOFF_FREQ, BIQUAD_Q, FILTER_LPF);
+        biquadFilterInit(&accelFilterLPF[axis], freqFlight, ACCEL_LPF_CUTOFF_FREQ, BIQUAD_Q, FILTER_LPF);
+    }
 }

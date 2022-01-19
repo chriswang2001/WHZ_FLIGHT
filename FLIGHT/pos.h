@@ -18,8 +18,10 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-extern FloatVector3 pos, vel, accelEarth; // position and velocity estimator
+/* Exported Variables --------------------------------------------------------*/
+extern FloatVector3 pos, vel, accelEarth; // position and velocity estimator, accel cm/s2 in earth coordinate system
 
+/* Exported functions prototypes ---------------------------------------------*/
 void POS_Update();
 
 #ifdef __cplusplus

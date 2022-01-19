@@ -22,9 +22,12 @@ extern "C" {
 
 /* Exported Variables --------------------------------------------------------*/
 extern uint32_t deltaTick;
-extern float sampleFreq;
+extern float freqFlight;
 
 /* Defines -------------------------------------------------------------------*/
+#define ANO_SEND // define to send information to ano host
+//#define DEBUG_ENABLE // define to enable debug printf
+
 // START Task
 #define START_TASK_PRIO 10    // Set task priority, Start task has the lowest priority
 #define START_STK_SIZE 128    // Set task stack size
@@ -39,7 +42,7 @@ void ANO_Task(void *pdata); // Task function
 // FLIGHT Task
 #define FLIGHT_TASK_PRIO 8     // Set task priority
 #define FLIGHT_STK_SIZE 256    // Set task stack size
-#define FLIGHT_CYCLE_MS 4      // Set task cycle
+#define FLIGHT_CYCLE_MS 2      // Set task cycle
 void FLIGHT_Task(void *pdata); // Task function
 
 /* Exported types ------------------------------------------------------------*/
@@ -58,7 +61,7 @@ enum
 };
 
 /**
- * @brief Mode name
+ * @brief Flymode name
  */
 enum
 {

@@ -21,7 +21,6 @@
 #define BYTE3(dwTemp) (*((char *)(&dwTemp) + 3))
 
 /* Variables -----------------------------------------------------------------*/
-uint8_t data[100];    // data to send
 void *ParamList[200]; // param list stores param pointer
 
 /**
@@ -29,29 +28,29 @@ void *ParamList[200]; // param list stores param pointer
  */
 void ANO_Init(void)
 {
-    ParamList[11] = &PID_rate_roll.Kp;
-    ParamList[12] = &PID_rate_roll.Ki;
-    ParamList[13] = &PID_rate_roll.Kd;
+    ParamList[11] = &PID_rate_roll.kp;
+    ParamList[12] = &PID_rate_roll.ki;
+    ParamList[13] = &PID_rate_roll.kd;
 
-    ParamList[14] = &PID_rate_pitch.Kp;
-    ParamList[15] = &PID_rate_pitch.Ki;
-    ParamList[16] = &PID_rate_pitch.Kd;
+    ParamList[14] = &PID_rate_pitch.kp;
+    ParamList[15] = &PID_rate_pitch.ki;
+    ParamList[16] = &PID_rate_pitch.kd;
 
-    ParamList[17] = &PID_rate_yaw.Kp;
-    ParamList[18] = &PID_rate_yaw.Ki;
-    ParamList[19] = &PID_rate_yaw.Kd;
+    ParamList[17] = &PID_rate_yaw.kp;
+    ParamList[18] = &PID_rate_yaw.ki;
+    ParamList[19] = &PID_rate_yaw.kd;
 
-    ParamList[20] = &PID_angle_roll.Kp;
-    ParamList[21] = &PID_angle_roll.Ki;
-    ParamList[22] = &PID_angle_roll.Kd;
+    ParamList[20] = &PID_angle_roll.kp;
+    ParamList[21] = &PID_angle_roll.ki;
+    ParamList[22] = &PID_angle_roll.kd;
 
-    ParamList[23] = &PID_angle_pitch.Kp;
-    ParamList[24] = &PID_angle_pitch.Ki;
-    ParamList[25] = &PID_angle_pitch.Kd;
+    ParamList[23] = &PID_angle_pitch.kp;
+    ParamList[24] = &PID_angle_pitch.ki;
+    ParamList[25] = &PID_angle_pitch.kd;
 
-    ParamList[32] = &PID_speed_altitude.Kp;
-    ParamList[33] = &PID_speed_altitude.Ki;
-    ParamList[34] = &PID_speed_altitude.Kd;
+    ParamList[32] = &PID_speed_altitude.kp;
+    ParamList[33] = &PID_speed_altitude.ki;
+    ParamList[34] = &PID_speed_altitude.kd;
 
     __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
 }
@@ -105,12 +104,13 @@ static inline void ano_addcheck(uint8_t *data)
 /**
  * @brief Send Verification
  * @param data data to send
- * @param id id get in data frame
- * @param sc sc get in data frame
- * @param ac ac get in data frame
+ * @param id id of data frame received
+ * @param sc sumcheck of data frame received
+ * @param ac addcheck of data frame received
  */
 static inline void ANO_Send_Verification(uint8_t id, uint8_t sc, uint8_t ac)
 {
+    static uint8_t data[9];
     uint8_t cnt = 0;
 
     data[cnt++] = 0xAA;
@@ -128,9 +128,7 @@ static inline void ANO_Send_Verification(uint8_t id, uint8_t sc, uint8_t ac)
 }
 
 /**
- * @brief  Send Sensor data including accelerometer and gyroscope
- * @param data data to send
- * @retval the length of data
+ * @brief Send Sensor data including accelerometer and gyroscope
  */
 uint8_t ANO_Send_Sensor(uint8_t *data, int16_t a_x, int16_t a_y, int16_t a_z, int16_t g_x, int16_t g_y, int16_t g_z)
 {
@@ -167,9 +165,7 @@ uint8_t ANO_Send_Sensor(uint8_t *data, int16_t a_x, int16_t a_y, int16_t a_z, in
 }
 
 /**
- * @brief  Send Sensor data magnetometer altitude and temperature
- * @param data data to send
- * @retval the length of data
+ * @brief Send Sensor data magnetometer altitude and temperature
  */
 uint8_t ANO_Send_Sensor2(uint8_t *data, int16_t m_x, int16_t m_y, int16_t m_z, int32_t alt, float tmp)
 {
@@ -194,7 +190,7 @@ uint8_t ANO_Send_Sensor2(uint8_t *data, int16_t m_x, int16_t m_y, int16_t m_z, i
     data[cnt++] = BYTE2(alt);
     data[cnt++] = BYTE3(alt);
 
-    int16_t temp = tmp * 10.f;
+    int16_t temp = tmp * 100.f;
     data[cnt++] = BYTE0(temp);
     data[cnt++] = BYTE1(temp);
 
@@ -207,9 +203,7 @@ uint8_t ANO_Send_Sensor2(uint8_t *data, int16_t m_x, int16_t m_y, int16_t m_z, i
 }
 
 /**
- * @brief  Send Status in the form of euler angle
- * @param data data to send
- * @retval the length of data
+ * @brief Send Status in the form of euler angle
  */
 uint8_t ANO_Send_Euler(uint8_t *data, float angle_rol, float angle_pit, float angle_yaw)
 {
@@ -239,9 +233,7 @@ uint8_t ANO_Send_Euler(uint8_t *data, float angle_rol, float angle_pit, float an
 }
 
 /**
- * @brief  Send flight mode(0 stand for locked, 1stand for unlocked)
- * @param data data to send
- * @retval the length of data
+ * @brief Send flight mode(0 stand for locked, 1 stand for unlocked)
  */
 uint8_t ANO_Send_Mode(uint8_t *data, uint8_t mode, uint8_t lock)
 {
@@ -261,9 +253,35 @@ uint8_t ANO_Send_Mode(uint8_t *data, uint8_t mode, uint8_t lock)
 }
 
 /**
+ * @brief Send target euler angle
+ */
+uint8_t ANO_Send_Target(uint8_t *data, float target_rol, float target_pit, float target_yaw)
+{
+    uint8_t cnt = 0;
+
+    data[cnt++] = 0xAA;
+    data[cnt++] = 0xAF;
+    data[cnt++] = 0x0A;
+    data[cnt++] = 6;
+
+    int16_t temp;
+    temp = target_rol * 100.f;
+    data[cnt++] = BYTE0(temp);
+    data[cnt++] = BYTE1(temp);
+    temp = target_pit * 100.f;
+    data[cnt++] = BYTE0(temp);
+    data[cnt++] = BYTE1(temp);
+    temp = target_yaw * 100.f;
+    data[cnt++] = BYTE0(temp);
+    data[cnt++] = BYTE1(temp);
+
+    ano_addcheck(data);
+
+    return cnt + 2;
+}
+
+/**
  * @brief  Send tha battery's voltage and current
- * @param data data to send
- * @retval the length of data
  */
 uint8_t ANO_Send_Battery(uint8_t *data, float voltage, float current)
 {
@@ -288,9 +306,7 @@ uint8_t ANO_Send_Battery(uint8_t *data, float voltage, float current)
 }
 
 /**
- * @brief  Send PWM value of four motors
- * @param data data to send
- * @retval the length of data
+ * @brief Send PWM value of four motors
  */
 uint8_t ANO_Send_PWM(uint8_t *data, uint16_t p1, uint16_t p2, uint16_t p3, uint16_t p4)
 {
@@ -319,9 +335,7 @@ uint8_t ANO_Send_PWM(uint8_t *data, uint16_t p1, uint16_t p2, uint16_t p3, uint1
 }
 
 /**
- * @brief  the control value computed by PID controller
- * @param data data to send
- * @retval the length of data
+ * @brief the control value computed by PID controller
  */
 uint8_t ANO_Send_Control(uint8_t *data, int16_t roll, int16_t pitch, int16_t thrust, int16_t yaw)
 {
@@ -350,9 +364,7 @@ uint8_t ANO_Send_Control(uint8_t *data, int16_t roll, int16_t pitch, int16_t thr
 }
 
 /**
- * @brief  Send the target angle sent by remote control
- * @param data data to send
- * @retval the length of data
+ * @brief Send the target angle sent by remote control
  */
 uint8_t ANO_Send_Remote(uint8_t *data, int16_t rol, int16_t pit, int16_t thr, int16_t yaw, int16_t aux1, int16_t aux2, int16_t aux3, int16_t aux4, int16_t aux5, int16_t aux6)
 {
@@ -398,11 +410,14 @@ uint8_t ANO_Send_Remote(uint8_t *data, int16_t rol, int16_t pit, int16_t thr, in
 }
 
 /**
- * @brief  Send string
- * @param data data to send
+ * @brief Send string
+ * @param string string to send
+ * @param size size of string
+ * @param color BLACK RED GREEN
  */
 void ANO_Send_String(char *string, size_t size, uint8_t color)
 {
+    uint8_t data[size + 7];
     uint8_t cnt = 0;
 
     data[cnt++] = 0xAA;
@@ -421,11 +436,12 @@ void ANO_Send_String(char *string, size_t size, uint8_t color)
 }
 
 /**
- * @brief  Send parm id and its value
- * @param data data to send
+ * @brief Send parameter value
+ * @param id parameter id
  */
 static inline void ANO_Send_Param(uint16_t id)
 {
+    static uint8_t data[12];
     uint8_t cnt = 0;
 
     data[cnt++] = 0xAA;

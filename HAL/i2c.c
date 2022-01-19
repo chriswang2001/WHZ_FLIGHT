@@ -70,16 +70,27 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef *i2cHandle)
         PB8     ------> I2C1_SCL
         PB9     ------> I2C1_SDA
         */
-        // strong pull-uphigh to recover from locking in BUSY state
-
-        GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9; //此行原有
-        GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;    // GPIO配置为输出
-        GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;       //强上拉
+        GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9;
+        GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
         HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-        HAL_GPIO_WritePin(GPIOB, 8, GPIO_PIN_SET); //拉高SCL
-        HAL_GPIO_WritePin(GPIOB, 9, GPIO_PIN_SET); //拉高SDA
-        hi2c1.Instance->CR1 = I2C_CR1_SWRST;       //复位I2C控制器
-        hi2c1.Instance->CR1 = 0;                   //解除复位（不会自动清除）
+
+        for (int i = 0; i < 10; ++i)
+        {
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
+            HAL_Delay(1);
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
+            HAL_Delay(1);
+        }
+
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
+
+        HAL_Delay(1);
+        i2cHandle->Instance->CR1 |= I2C_CR1_SWRST; //复位I2C控制器
+        HAL_Delay(1);
+        i2cHandle->Instance->CR1 = 0; //解除复位（不会自动清除）
 
         GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9;
         GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
@@ -122,7 +133,12 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef *i2cHandle)
 }
 
 /* USER CODE BEGIN 1 */
-
+void I2C_Reset()
+{
+    HAL_I2C_MspDeInit(&hi2c1);
+    hi2c1.State = HAL_I2C_STATE_RESET;
+    MX_I2C1_Init();
+}
 /* USER CODE END 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

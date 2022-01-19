@@ -3,19 +3,19 @@
         {
             "name": "Target 1",
             "includePath": [
-                "d:\\workspace\\FLIGHT\\WHZ_FLIGHT - 改传感器驱动前\\uCOS",
-                "d:\\workspace\\FLIGHT\\WHZ_FLIGHT - 改传感器驱动前\\LIB\\Inc",
-                "d:\\workspace\\FLIGHT\\WHZ_FLIGHT - 改传感器驱动前\\HAL",
-                "d:\\workspace\\FLIGHT\\WHZ_FLIGHT - 改传感器驱动前\\APP",
-                "d:\\workspace\\FLIGHT\\WHZ_FLIGHT - 改传感器驱动前\\DRIVER",
-                "d:\\workspace\\FLIGHT\\WHZ_FLIGHT - 改传感器驱动前\\FLIGHT",
+                "d:\\workspace\\WHZ_FLIGHT - 副本 (2)\\uCOS",
+                "d:\\workspace\\WHZ_FLIGHT - 副本 (2)\\LIB\\Inc",
+                "d:\\workspace\\WHZ_FLIGHT - 副本 (2)\\HAL",
+                "d:\\workspace\\WHZ_FLIGHT - 副本 (2)\\APP",
+                "d:\\workspace\\WHZ_FLIGHT - 副本 (2)\\DRIVER",
+                "d:\\workspace\\WHZ_FLIGHT - 副本 (2)\\FLIGHT",
                 "C:\\Keil_v5\\ARM\\ARMCLANG\\include",
                 "C:\\Keil_v5\\ARM\\ARMCLANG\\include\\arm_linux",
                 "C:\\Keil_v5\\ARM\\ARMCLANG\\include\\arm_linux_compat",
                 "C:\\Keil_v5\\ARM\\ARMCLANG\\include\\libcxx",
-                "d:\\workspace\\FLIGHT\\WHZ_FLIGHT - 改传感器驱动前\\LIB",
-                "d:\\workspace\\FLIGHT\\WHZ_FLIGHT - 改传感器驱动前\\LIB\\Src",
-                "d:\\workspace\\FLIGHT\\WHZ_FLIGHT - 改传感器驱动前\\UCOS"
+                "d:\\workspace\\WHZ_FLIGHT - 副本 (2)\\LIB",
+                "d:\\workspace\\WHZ_FLIGHT - 副本 (2)\\LIB\\Src",
+                "d:\\workspace\\WHZ_FLIGHT - 副本 (2)\\UCOS"
             ],
             "defines": [
                 "USE_HAL_DRIVER",

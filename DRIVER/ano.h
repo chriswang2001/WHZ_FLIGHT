@@ -30,6 +30,7 @@ uint8_t ANO_Send_Sensor(uint8_t *data, int16_t a_x, int16_t a_y, int16_t a_z, in
 uint8_t ANO_Send_Sensor2(uint8_t *data, int16_t m_x, int16_t m_y, int16_t m_z, int32_t alt, float tmp);
 uint8_t ANO_Send_Euler(uint8_t *data, float angle_rol, float angle_pit, float angle_yaw);
 uint8_t ANO_Send_Mode(uint8_t *data, uint8_t mode, uint8_t lock);
+uint8_t ANO_Send_Target(uint8_t *data, float target_rol, float target_pit, float target_yaw);
 uint8_t ANO_Send_Battery(uint8_t *data, float voltage, float current);
 uint8_t ANO_Send_PWM(uint8_t *data, uint16_t p1, uint16_t p2, uint16_t p3, uint16_t p4);
 uint8_t ANO_Send_Control(uint8_t *data, int16_t roll, int16_t pitch, int16_t thrust, int16_t yaw);

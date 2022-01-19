@@ -19,6 +19,9 @@ extern "C" {
 #include "stm32f4xx_hal.h"
 #include <arm_math.h>
 
+/* Defines -------------------------------------------------------------------*/
+#define BIQUAD_Q 1.0f / sqrtf(2.0f) /* quality factor - butterworth*/
+
 /* Exported types ------------------------------------------------------------*/
 typedef struct biquadFilter_s /* this holds the data required to update samples thru a filter */
 {
@@ -38,7 +41,11 @@ extern biquadFilter_t gyroFilterLPF[3];
 
 /* Exported functions prototypes ---------------------------------------------*/
 void FILTER_Init();
+float limitApply(float in, float min, float max);
+float deadBandApply(float input, float deadband);
+float slidingFilterApply(float *buffer, float in, int size);
 float biquadFilterApply(biquadFilter_t *filter, float input);
+void biquadFilterInit(biquadFilter_t *filter, uint16_t samplingFreq, uint16_t filterFreq, float Q, biquadFilterType_e filterType);
 
 #ifdef __cplusplus
 }
